@@ -1,3 +1,7 @@
 interface EmptyInterface {
     
 }
+
+type EmptyType = {
+    
+}

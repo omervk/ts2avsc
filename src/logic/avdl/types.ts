@@ -1,4 +1,5 @@
 export type ProtocolDeclaration = {
+    name: string;
     declarations: (RecordDeclaration)[];
 }
 

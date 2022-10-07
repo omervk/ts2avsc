@@ -10,7 +10,7 @@ import {
 } from "./types";
 
 function indent(s: string) {
-    return '  ' + s.replace('\n', '\n  ')
+    return '\t' + s.replace(/\n/g, '\n\t')
 }
 
 function writeType(type: Type): string {
@@ -60,18 +60,18 @@ function writeRecordDecl(r: RecordDeclaration): string {
     const fieldOutputs = r.fields.map(field => writeField(field));
 
     if (fieldOutputs.length > 0) {
-        output += `
-record ${r.name} {
+        output += `record ${r.name} {
 ${indent(fieldOutputs.join('\n'))}
 }`
     } else {
-        output += `
-record ${r.name} {
+        output += `record ${r.name} {
 }`
     }
     return output;
 }
 
 export default function write(p: ProtocolDeclaration): string {
-    return p.declarations.map(d => writeRecordDecl(d)).join('\n');
+    return `protocol ${p.name} {
+${indent(p.declarations.map(d => writeRecordDecl(d)).join('\n\n'))}
+}`;
 }
