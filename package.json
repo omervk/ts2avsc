@@ -1,5 +1,5 @@
 {
-    "name": "ts2avro",
+    "name": "ts2avdl",
     "version": "1.0.0",
     "scripts": {
         "main": "npx ts-node src/main.ts"
