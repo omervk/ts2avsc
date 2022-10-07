@@ -13,6 +13,10 @@ import path from "path";
 export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclaration {
     return traverseSourceFile(sourceFile);
 
+    function conversionError(node: ts.ReadonlyTextRange, message: string): ConversionError {
+        return new ConversionError(message, sourceFile.getLineAndCharacterOfPosition(node.pos));
+    }
+
     function traverseTypeLiteral(node: ts.TypeLiteralNode): FieldDeclaration[] {
         const fields: FieldDeclaration[] = [];
 
@@ -22,10 +26,10 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
                     fields.push(traversePropertySignature(child as ts.PropertySignature));
                     break;
                 default:
-                    console.log(`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(node.kind)}`);
+                    throw conversionError(child,`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(node.kind)}`);
             }
         });
-        
+
         return fields;
     }
 
@@ -64,40 +68,73 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
         return;
     }
 
-    function toType(kind: ts.SyntaxKind, nullable: boolean, annotations: string[], propertyName: string): Type {
-        switch (kind) {
+    function toType(type: ts.Node, nullable: boolean, annotations: string[], propertyName: string): Type {
+        switch (type.kind) {
             case ts.SyntaxKind.StringKeyword:
-                return { nullable, type: "string" };
+                if (annotations.includes('uuid')) {
+                    return {nullable, type: "uuid"}
+                }
+
+                return {nullable, type: "string"};
+
+            case ts.SyntaxKind.BooleanKeyword:
+                return {nullable, type: 'boolean'};
+
             case ts.SyntaxKind.NumberKeyword:
-                const possibleTypes = ['int', 'long', 'float', 'double'];
+                const possibleTypes: (PrimitiveType & string)[] = [
+                    'int', 'long', 'float', 'double', 'date', 'time_ms', 'timestamp_ms', 'local_timestamp_ms'
+                ];
                 const numberType = possibleTypes.find(type => annotations.includes(type));
 
                 if (numberType === undefined) {
-                    throw new Error(`${propertyName} has no specialized type. Please prefix it with // @avro {type}, with the type being one of ${possibleTypes.join(', ')}`);
+                    throw conversionError(type, `${propertyName} has no specialized type. Please prefix it with // @avro {type}, with the type being one of ${possibleTypes.join(', ')}`);
                 }
 
-                return { nullable, type: numberType as PrimitiveType };
-            default:
-                throw new Error(`Unsupported type kind ${kind}`);
+                return {nullable, type: numberType as PrimitiveType};
+            case ts.SyntaxKind.TypeReference:
+                const {typeName} = type as ts.TypeReferenceNode;
+
+                if (typeName.kind === ts.SyntaxKind.Identifier) {
+                    if (typeName.text === Uint8Array.name) {
+                        return {nullable, type: "bytes"};
+                    }
+
+                    throw conversionError(type, `Using a custom type like ${typeName.text} is not supported.`);
+                }
+
+                throw conversionError(type, "We don't yet support QualifiedName as a TypeReference for a property.")
+
+            case ts.SyntaxKind.LiteralType:
+                const {literal} = type as ts.LiteralTypeNode;
+
+                if (literal.kind === ts.SyntaxKind.NullKeyword) {
+                    return {nullable: false, type: "null"}
+                }
+
+                break;
         }
+
+        throw conversionError(type, `Unsupported type kind ${decodeSyntaxKind(type.kind)}`);
+    }
+
+    function getAvroAnnotationsBefore(hasPosition: ts.ReadonlyTextRange): string[] {
+        return (ts.getLeadingCommentRanges(sourceFile.getFullText(), hasPosition.pos) || [])
+            .map(cr => commentToAvroAnnotation(cr))
+            .filter((s): s is string => true);
     }
 
     function traversePropertySignature(prop: ts.PropertySignature): FieldDeclaration {
-        const annotations: string[] = (ts.getLeadingCommentRanges(sourceFile.getFullText(), prop.pos) || [])
-            .map(cr => commentToAvroAnnotation(cr))
-            .filter((s): s is string => true);
-
         if (!('escapedText' in prop.name)) {
-            throw new Error("Property has no name?");
+            throw conversionError(prop, "Property has no name?");
         }
 
         const propertyName = prop.name.text;
 
-        if (!(prop.type && 'kind' in prop.type)) {
-            throw new Error("Property has no type?");
+        if (!prop.type) {
+            throw conversionError(prop, "Property has no type?");
         }
 
-        const type: Type = toType(prop.type.kind, !!prop.questionToken, annotations, propertyName);
+        const type: Type = toType(prop.type, !!prop.questionToken, getAvroAnnotationsBefore(prop), propertyName);
 
         return {
             name: propertyName,
@@ -120,7 +157,7 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
                 case ts.SyntaxKind.EndOfFileToken:
                     break;
                 default:
-                    console.log(`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of a SourceFile.`);
+                    throw conversionError(child, `Unknown element type ${decodeSyntaxKind(child.kind)} in the context of a SourceFile.`);
             }
         });
 
@@ -142,6 +179,20 @@ export function toAvroIdl(fileName: string): string {
 
 function decodeSyntaxKind(kind: ts.SyntaxKind): string {
     return decodedSyntaxKind[kind] || kind.toString();
+}
+
+export class ConversionError extends Error {
+    readonly line: number;
+    readonly character: number;
+    readonly rawMessage: string;
+
+    constructor(message: string, lineAndChar: ts.LineAndCharacter) {
+        super(`Error at line ${lineAndChar.line}, character ${lineAndChar.character}: ${message}`);
+
+        this.line = lineAndChar.line;
+        this.character = lineAndChar.character;
+        this.rawMessage = message;
+    }
 }
 
 const decodedSyntaxKind = {
