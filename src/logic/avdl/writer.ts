@@ -34,9 +34,7 @@ function writeType(type: Type): string {
         output = type.type.toString();
     }
 
-    const nullablePostfix = type.nullable ? "?" : "";
-
-    return `${output}${nullablePostfix}`;
+    return type.nullable ? `union { null, ${output} }` : output;
 }
 
 function writeField(f: FieldDeclaration) {

@@ -2,59 +2,59 @@
 protocol Input {
 	record Interface {
 		boolean requiredBool;
-		boolean? optionalBool;
+		union { null, boolean } optionalBool;
 		bytes requiredBytes;
-		bytes? optionalBytes;
-		int? optionalInt;
+		union { null, bytes } optionalBytes;
+		union { null, int } optionalInt;
 		int requiredInt;
 		string requiredString;
-		string? optionalString;
-		float? optionalFloat;
+		union { null, string } optionalString;
+		union { null, float } optionalFloat;
 		float requiredFloat;
-		double? optionalDouble;
+		union { null, double } optionalDouble;
 		double requiredDouble;
-		long? optionalLong;
+		union { null, long } optionalLong;
 		long requiredLong;
 		null optionalNull;
 		null requiredNull;
-		date? optionalDate;
+		union { null, date } optionalDate;
 		date requiredDate;
-		time_ms? optionalTimeMs;
+		union { null, time_ms } optionalTimeMs;
 		time_ms requiredTimeMs;
-		timestamp_ms? optionalTimestampMs;
+		union { null, timestamp_ms } optionalTimestampMs;
 		timestamp_ms requiredTimestampMs;
-		local_timestamp_ms? optionalLocalTimestampMs;
+		union { null, local_timestamp_ms } optionalLocalTimestampMs;
 		local_timestamp_ms requiredLocalTimestampMs;
-		uuid? optionalUuid;
+		union { null, uuid } optionalUuid;
 		uuid requiredUuid;
 	}
 
 	record Type {
 		boolean requiredBool;
-		boolean? optionalBool;
+		union { null, boolean } optionalBool;
 		bytes requiredBytes;
-		bytes? optionalBytes;
-		int? optionalInt;
+		union { null, bytes } optionalBytes;
+		union { null, int } optionalInt;
 		int requiredInt;
 		string requiredString;
-		string? optionalString;
-		float? optionalFloat;
+		union { null, string } optionalString;
+		union { null, float } optionalFloat;
 		float requiredFloat;
-		double? optionalDouble;
+		union { null, double } optionalDouble;
 		double requiredDouble;
-		long? optionalLong;
+		union { null, long } optionalLong;
 		long requiredLong;
 		null optionalNull;
 		null requiredNull;
-		date? optionalDate;
+		union { null, date } optionalDate;
 		date requiredDate;
-		time_ms? optionalTimeMs;
+		union { null, time_ms } optionalTimeMs;
 		time_ms requiredTimeMs;
-		timestamp_ms? optionalTimestampMs;
+		union { null, timestamp_ms } optionalTimestampMs;
 		timestamp_ms requiredTimestampMs;
-		local_timestamp_ms? optionalLocalTimestampMs;
+		union { null, local_timestamp_ms } optionalLocalTimestampMs;
 		local_timestamp_ms requiredLocalTimestampMs;
-		uuid? optionalUuid;
+		union { null, uuid } optionalUuid;
 		uuid requiredUuid;
 	}
 }
