@@ -1,9 +1,3 @@
-// TODO: imports --> avdl imports
-// TODO: Logical types
-// TODO: Make sure we're in the right context (e.g. property inside interface)
-// TODO: Preserve comments
-// TODO: Decimal
-
 import * as ts from "typescript";
 import write from "./avdl/writer";
 import {FieldDeclaration, PrimitiveType, ProtocolDeclaration, RecordDeclaration, Type} from "./avdl/types";

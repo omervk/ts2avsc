@@ -58,6 +58,3 @@ export class DecimalType {
         this.scale = scale;
     }
 }
-
-// TODO: Enums
-// TODO: Fixed
