@@ -184,7 +184,7 @@ export class ConversionError extends Error {
     readonly rawMessage: string;
 
     constructor(message: string, lineAndChar: ts.LineAndCharacter) {
-        super(`Error at line ${lineAndChar.line}, character ${lineAndChar.character}: ${message}`);
+        super(`At (${lineAndChar.line}:${lineAndChar.character}): ${message}`);
 
         this.line = lineAndChar.line;
         this.character = lineAndChar.character;
