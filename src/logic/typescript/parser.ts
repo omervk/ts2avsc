@@ -1,5 +1,5 @@
 import * as ts from "typescript";
-import {decodeSyntaxKind} from "../decodeSyntaxKind";
+import {decodeSyntaxKind} from "./decodeSyntaxKind";
 import {FieldDeclaration, InterfaceOrType, Type} from "./types";
 
 export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
