@@ -1,17 +1,14 @@
 import * as ts from "typescript";
-import write from "./avdl/writer";
-import {FieldDeclaration, PrimitiveType, ProtocolDeclaration, RecordDeclaration, Type} from "./avdl/types";
-import {readFileSync} from "fs";
-import path from "path";
-import {decodeSyntaxKind} from "./decodeSyntaxKind";
+import {decodeSyntaxKind} from "../decodeSyntaxKind";
+import {FieldDeclaration, InterfaceOrType, Type} from "./types";
 
-export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclaration {
+export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
     return traverseSourceFile(sourceFile);
 
     function conversionError(node: ts.ReadonlyTextRange, message: string): ConversionError {
         return new ConversionError(message, sourceFile.getLineAndCharacterOfPosition(node.pos));
     }
-
+    
     function traverseTypeLiteral(node: ts.TypeLiteralNode): FieldDeclaration[] {
         const fields: FieldDeclaration[] = [];
 
@@ -28,7 +25,7 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
         return fields;
     }
 
-    function traverseDecl(decl: ts.InterfaceDeclaration | ts.TypeAliasDeclaration): RecordDeclaration {
+    function traverseDecl(decl: ts.InterfaceDeclaration | ts.TypeAliasDeclaration): InterfaceOrType {
         const fields: FieldDeclaration[] = [];
 
         ts.forEachChild(decl, child => {
@@ -63,35 +60,27 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
         return;
     }
 
-    function toType(type: ts.Node, nullable: boolean, annotations: string[], propertyName: string): Type {
+    function toType(type: ts.Node): Type {
         switch (type.kind) {
             case ts.SyntaxKind.StringKeyword:
-                if (annotations.includes('uuid')) {
-                    return {nullable, type: "uuid"}
-                }
+                // if (annotations.includes('uuid')) {
+                //     return "uuid";
+                // }
 
-                return {nullable, type: "string"};
+                return 'string';
 
             case ts.SyntaxKind.BooleanKeyword:
-                return {nullable, type: 'boolean'};
+                return 'boolean';
 
             case ts.SyntaxKind.NumberKeyword:
-                const possibleTypes: (PrimitiveType & string)[] = [
-                    'int', 'long', 'float', 'double', 'date', 'time_ms', 'timestamp_ms', 'local_timestamp_ms'
-                ];
-                const numberType = possibleTypes.find(type => annotations.includes(type));
+                return 'number';
 
-                if (numberType === undefined) {
-                    throw conversionError(type, `${propertyName} has no specialized type. Please prefix it with // @avro {type}, with the type being one of ${possibleTypes.join(', ')}`);
-                }
-
-                return {nullable, type: numberType as PrimitiveType};
             case ts.SyntaxKind.TypeReference:
                 const {typeName} = type as ts.TypeReferenceNode;
 
                 if (typeName.kind === ts.SyntaxKind.Identifier) {
-                    if (typeName.text === Uint8Array.name) {
-                        return {nullable, type: "bytes"};
+                    if (typeName.text === Buffer.name) {
+                        return 'Buffer';
                     }
 
                     throw conversionError(type, `Using a custom type like ${typeName.text} is not supported.`);
@@ -103,7 +92,7 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
                 const {literal} = type as ts.LiteralTypeNode;
 
                 if (literal.kind === ts.SyntaxKind.NullKeyword) {
-                    return {nullable: false, type: "null"}
+                    return 'null';
                 }
 
                 break;
@@ -123,53 +112,51 @@ export function toProtocolDeclaration(sourceFile: ts.SourceFile): ProtocolDeclar
             throw conversionError(prop, "Property has no name?");
         }
 
-        const propertyName = prop.name.text;
-
         if (!prop.type) {
             throw conversionError(prop, "Property has no type?");
         }
 
-        const type: Type = toType(prop.type, !!prop.questionToken, getAvroAnnotationsBefore(prop), propertyName);
-
         return {
-            name: propertyName,
-            type,
-            defaultValue: undefined,
+            name: prop.name.text,
+            type: toType(prop.type),
+            optional: !!prop.questionToken,
+            annotations: getAvroAnnotationsBefore(prop)
         };
     }
 
-    function traverseSourceFile(node: ts.SourceFile): ProtocolDeclaration {
-        const declarations: (RecordDeclaration)[] = [];
+    function traverseSourceFile(node: ts.SourceFile): InterfaceOrType {
+        let interfaceOrType: InterfaceOrType | undefined;
 
         ts.forEachChild(node, child => {
+            if (interfaceOrType !== undefined) {
+                return;
+            }
+
             switch (child.kind) {
                 case ts.SyntaxKind.InterfaceDeclaration:
-                    declarations.push(traverseDecl(child as ts.InterfaceDeclaration));
+                    interfaceOrType = traverseDecl(child as ts.InterfaceDeclaration);
                     break;
+
                 case ts.SyntaxKind.TypeAliasDeclaration:
-                    declarations.push(traverseDecl(child as ts.TypeAliasDeclaration));
+                    interfaceOrType = traverseDecl(child as ts.TypeAliasDeclaration);
                     break;
-                case ts.SyntaxKind.EndOfFileToken:
-                    break;
+
                 default:
                     throw conversionError(child, `Unknown element type ${decodeSyntaxKind(child.kind)} in the context of a SourceFile.`);
             }
         });
 
-        const fileName = path.basename(path.basename(sourceFile.fileName), path.extname(sourceFile.fileName));
+        if (interfaceOrType === undefined) {
+            throw conversionError(node, 'No interface found to convert.');
+        }
 
-        return {
-            name: fileName[0].toUpperCase() + fileName.substring(1),
-            declarations
-        };
+        return interfaceOrType;
     }
 }
 
-export function toAvroIdl(fileName: string): string {
-    const contents = readFileSync(fileName).toString();
-    const sourceFile = ts.createSourceFile(fileName, contents, ts.ScriptTarget.ES5);
-    const protocol: ProtocolDeclaration = toProtocolDeclaration(sourceFile);
-    return `// Autogenerated from ${fileName}.\n${write(protocol).replace(/^\t+$/mg, '')}`;
+export function toAst(typeScriptContents: string): InterfaceOrType {
+    const sourceFile = ts.createSourceFile("dummy.ts", typeScriptContents, ts.ScriptTarget.ES5);
+    return parseAst(sourceFile);
 }
 
 export class ConversionError extends Error {

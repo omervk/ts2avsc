@@ -1,4 +1,11 @@
-const {readFileSync, writeFileSync, readdirSync} = require("fs");
+const {readFileSync, writeFileSync, readdirSync, mkdirSync } = require("fs");
+
+const indentation = '    ';
+
+function indent(s, tabCount) {
+    const whitespace = indentation.repeat(tabCount);
+    return whitespace + s.replace(/\n/g, '\n' + whitespace)
+}
 
 const baseDir = 'tests/cases';
 const cases = readdirSync(baseDir);
@@ -8,14 +15,22 @@ const allIts = [];
 cases.forEach($case => {
     const itName = $case.replace(/-/g, ' ');
     const inputFilePath = `${baseDir}/${$case}/input.ts`;
-    const output = readFileSync(`${baseDir}/${$case}/output.avdl`).toString();
+    const expectedFilePath = `${baseDir}/${$case}/output.avsc`;
+    const output = readFileSync(expectedFilePath).toString();
+    const input = readFileSync(inputFilePath).toString();
     
     allIts.push(
 `
     it('${itName}', () => {
-        const inputFilePath = '${inputFilePath}';
-        const outputAvdl = \`${output}\`;
-        expect(toAvroIdl(inputFilePath)).toStrictEqual(outputAvdl);
+        // Source: ${inputFilePath}
+        const inputTypescript = \`
+${indent(input, 3)}
+        \`;
+        // Source: ${expectedFilePath}
+        const expectedAvroSchema = 
+${indent(JSON.stringify(JSON.parse(output), null, indentation), 3)};
+        const actualAvroSchema = JSON.parse(typescriptToAvroSchema(inputTypescript));
+        expect(actualAvroSchema).toStrictEqual(expectedAvroSchema);
     });
 `);
 });
@@ -24,11 +39,18 @@ const testFile = `/*
     -------- THIS IS AN AUTO-GENERATED FILE --------
     It will be rewritten the next time tests are run
 */
-import {toAvroIdl} from "../src/logic/converter";
+import typescriptToAvroSchema from "../../src/logic/typescript-to-avsc";
 
-describe('TypeScript to Avro IDL', () => {
+describe('TypeScript to Avro Schema', () => {
 ${allIts.join('')}
 });
 `;
 
-writeFileSync('tests/all-tests.spec.ts', testFile);
+try {
+    mkdirSync('tests/generated');
+} catch (err) {
+    if (err.code !== 'EEXIST') {
+        throw err;
+    }
+}
+writeFileSync('tests/generated/all-tests.spec.ts', testFile);

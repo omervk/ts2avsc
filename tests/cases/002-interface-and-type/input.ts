@@ -1,7 +1,0 @@
-interface EmptyInterface {
-    
-}
-
-type EmptyType = {
-    
-}

@@ -2,4 +2,4 @@
 *.iml
 node_modules
 dist
-tests/all-tests.spec.ts
+/tests/generated
