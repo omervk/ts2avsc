@@ -9,20 +9,26 @@ In our case, developers building in TypeScript who want to produce Avro can defi
 Don't.
 
 ## // TODO:
-1. Validate this works with an actual library that serializes to Avro.
-2. Validate this makes sense for readers (e.g. ask Yehonatan how he would create an interface / type for a schema).
+1. Validate this makes sense for readers (e.g. ask Yehonatan how he would create an interface / type for a schema).
+2. Test errors and make sure coverage is decent
 3. Add language features:
-   1. long types
-   2. decimal
-   3. duration
-   4. docs
-   5. aliases
-   6. default values
-   7. order (fields)
-   8. enums
-   9. arrays
-   10. maps
-   11. unions (ts -> avro)
-   12. fixed
-   13. type references
-4. Proper docs
+   1. companion types library
+   2. long types
+   3. decimal
+   4. duration
+   5. docs
+   6. aliases
+   7. default values
+   8. order (fields)
+   9. enums
+   10. arrays
+   11. maps
+   12. unions (ts -> avro)
+   13. fixed
+   14. type references
+
+## // TODO: Docs
+1. Interface / type. Please make it exported.
+2. Create `.avsc` file
+3. Create serializer for the producer, deserializer for the consumer
+4. Type narrowing using comment annotations

@@ -1,4 +1,4 @@
-interface Interface3 {
+export interface Interface3 {
     requiredBool: boolean;
     optionalBool?: boolean;
     

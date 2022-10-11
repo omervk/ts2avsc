@@ -26,11 +26,15 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
     }
 
     function traverseDecl(decl: ts.InterfaceDeclaration | ts.TypeAliasDeclaration): InterfaceOrType {
+        if (!decl.modifiers?.find(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
+            throw conversionError(decl, `Unable to find an 'export' modifier on ${decl.name.text}. Please add it and try again.`)
+        }
+        
         const fields: FieldDeclaration[] = [];
 
         ts.forEachChild(decl, child => {
             switch (child.kind) {
-                case ts.SyntaxKind.Identifier:
+                case ts.SyntaxKind.Identifier: case ts.SyntaxKind.ExportKeyword:
                     break;
                 case ts.SyntaxKind.PropertySignature:
                     fields.push(traversePropertySignature(child as ts.PropertySignature));

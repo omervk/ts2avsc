@@ -1,3 +1,3 @@
-type EmptyType = {
+export type EmptyType = {
     
 }

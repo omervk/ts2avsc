@@ -1,4 +1,4 @@
-interface Interface4 {
+export interface Interface4 {
     // @avro int
     optionalInt?: number;
 
