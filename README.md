@@ -1,7 +1,9 @@
 # TypeScript to Avro Schema
 
-When producing data, developers often want to use the language they're fluent in to define how their data looks. Asking
-a developer to create a schema in the language of the protocol is friction they're rather not face.
+## WARNING: This is a WIP, ill-advised project. Use at your own peril.
+
+When producing data, developers often want to use the language they're fluent in to define how their data looks.
+Asking a developer to create a schema in the language of the protocol is friction they'd rather not face.
 
 In our case, developers building in TypeScript who want to produce Avro can define their schemas with TypeScript `type`s
 and `interface`s. This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript file.
@@ -151,3 +153,6 @@ The "manual" conversions are a type-safe way of converting between these two idi
    15. not just the interface in the same file
    16. run tests on the serializer/deserializer to make sure they do what they're supposed to
 
+Copyright 2022 Omer van Kloeten
+
+(I'll remove the copyright once this is no longer a WIP project)
