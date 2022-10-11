@@ -25,6 +25,29 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
         return fields;
     }
 
+    function getJsDoc(node: ts.Node): undefined | string {
+        const jsDocs: string[] = node.getChildren(sourceFile)
+            .filter(child => child.kind === ts.SyntaxKind.JSDoc)
+            .map(child => {
+                const comment = (child as ts.JSDoc).comment;
+                
+                if (comment === undefined) {
+                    return '';
+                }
+                
+                if (typeof comment === 'string') {
+                    return comment;
+                }
+
+                return comment
+                    .filter(c => c.kind === ts.SyntaxKind.JSDocText)
+                    .map(c => (c as ts.JSDocText).text)
+                    .join('\n');
+            });
+
+        return jsDocs.length === 0 ? undefined : jsDocs.join('\n').trim();
+    }
+
     function traverseDecl(decl: ts.InterfaceDeclaration | ts.TypeAliasDeclaration): InterfaceOrType {
         if (!decl.modifiers?.find(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
             throw conversionError(decl, `Unable to find an 'export' modifier on ${decl.name.text}. Please add it and try again.`)
@@ -50,6 +73,7 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
         return {
             name: decl.name.text,
             fields,
+            jsDoc: getJsDoc(decl),
         };
     }
 
@@ -124,7 +148,8 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
             name: prop.name.text,
             type: toType(prop.type),
             optional: !!prop.questionToken,
-            annotations: getAvroAnnotationsBefore(prop)
+            annotations: getAvroAnnotationsBefore(prop),
+            jsDoc: getJsDoc(prop),
         };
     }
 

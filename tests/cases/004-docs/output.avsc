@@ -1,0 +1,12 @@
+{
+    "doc": "Information about the interface",
+    "fields": [
+        {
+            "doc": "Information about the field",
+            "name": "someField",
+            "type": "string"
+        }
+    ],
+    "name": "Interface4",
+    "type": "record"
+}

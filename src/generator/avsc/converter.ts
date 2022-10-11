@@ -83,6 +83,7 @@ function toField(field: ts.FieldDeclaration): avsc.RecordField {
     return {
         name: field.name,
         type: toType(field.type, field.optional, field.annotations),
+        doc: field.jsDoc,
     };
 }
 
@@ -94,6 +95,7 @@ export default function toAvroSchema(ast: ts.InterfaceOrType): avsc.Schema {
     return {
         name: ast.name,
         fields: toFields(ast.fields),
-        type: "record"
+        type: "record",
+        doc: ast.jsDoc
     }
 }
