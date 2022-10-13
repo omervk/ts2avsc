@@ -44,14 +44,6 @@
         {
             "name": "requiredDouble",
             "type": "double"
-        },
-        {
-            "name": "optionalNull",
-            "type": "null"
-        },
-        {
-            "name": "requiredNull",
-            "type": "null"
         }
     ],
     "type": "record"

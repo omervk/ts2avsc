@@ -12,4 +12,36 @@ export type FieldDeclaration = {
     jsDoc?: string;
 }
 
-export type Type = 'null' | 'number' | 'string' | 'boolean' | 'Buffer';
+export type Type = PrimitiveType | LiteralType | OtherType;
+export type PrimitiveType = 'number' | 'string' | 'boolean'
+export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
+export type OtherType = 'Buffer'; // TODO: Find a better name
+
+export interface Literal {
+    readonly kind: string;   
+}
+
+export class NullLiteral {
+    public readonly kind: string = 'null';
+}
+
+export class BooleanLiteral {
+    public readonly kind: string = 'boolean';
+    
+    constructor(public readonly literal: boolean) {
+    }
+}
+
+export class StringLiteral {
+    public readonly kind: string = 'string';
+
+    constructor(public readonly literal: string) {
+    }
+}
+
+export class NumberLiteral {
+    public readonly kind: string = 'number';
+
+    constructor(public readonly literal: number) {
+    }
+}

@@ -10,7 +10,4 @@ export interface Interface3 {
     
     optionalDouble?: number;
     requiredDouble: number;
-
-    optionalNull?: null;
-    requiredNull: null;
 }

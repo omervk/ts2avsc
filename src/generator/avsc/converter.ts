@@ -1,5 +1,6 @@
 import * as avsc from "./types";
 import * as ts from "../typescript/types";
+import {BooleanLiteral, NullLiteral, NumberLiteral, PrimitiveType, StringLiteral} from "../typescript/types";
 
 function chooseNumberAnnotation(annotationsOnType: string[]): string {
     const numberAnnotations: string[] = [
@@ -18,8 +19,14 @@ function chooseNumberAnnotation(annotationsOnType: string[]): string {
 function toBaseType(type: ts.Type, annotationsOnType: string[]): avsc.Type {
     // TODO: Type check annotations (during parsing?)
     // TODO: Warn when some annotations are dropped
-
-    switch (type) {
+    
+    const isLiteralType = (t: any & ts.Type): t is ts.Literal => {
+        return !!t.kind;
+    }
+    
+    const typeName: string = isLiteralType(type) ? type.kind : type;
+    
+    switch (typeName) {
         case "string":
             if (annotationsOnType.includes('uuid')) {
                 return new avsc.Uuid();

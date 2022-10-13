@@ -1,6 +1,14 @@
 import * as ts from "typescript";
 import {decodeSyntaxKind} from "./decodeSyntaxKind";
-import {FieldDeclaration, InterfaceOrType, Type} from "./types";
+import {
+    BooleanLiteral,
+    FieldDeclaration,
+    InterfaceOrType,
+    NullLiteral,
+    NumberLiteral,
+    StringLiteral,
+    Type
+} from "./types";
 
 export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
     return traverseSourceFile(sourceFile);
@@ -120,7 +128,24 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
                 const {literal} = type as ts.LiteralTypeNode;
 
                 if (literal.kind === ts.SyntaxKind.NullKeyword) {
-                    return 'null';
+                    return new NullLiteral();
+                }
+                
+                // TODO: BigIntLiteral
+                if (literal.kind === ts.SyntaxKind.StringLiteral) {
+                    return new StringLiteral(literal.text);
+                }
+                
+                if (literal.kind === ts.SyntaxKind.NumericLiteral) {
+                    return new NumberLiteral(parseFloat(literal.text));
+                }
+
+                if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+                    return new BooleanLiteral(true);
+                }
+                
+                if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+                    return new BooleanLiteral(false);
                 }
 
                 break;

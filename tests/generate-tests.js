@@ -17,11 +17,9 @@ cases.forEach($case => {
     const inputFilePath = `${baseDir}/${$case}/input.ts`;
     const expectedAvscPath = `${baseDir}/${$case}/output.avsc`;
     const expectedSerializerPath = `${baseDir}/${$case}/serializer.ts`;
-    const expectedDeserializerPath = `${baseDir}/${$case}/deserializer.ts`;
     const input = readFileSync(inputFilePath).toString();
     const expectedAvsc = readFileSync(expectedAvscPath).toString();
     const expectedSerializer = readFileSync(expectedSerializerPath).toString();
-    const expectedDeserializer = readFileSync(expectedDeserializerPath).toString();
 
     allIts.push(
 `
@@ -46,14 +44,6 @@ ${indent(JSON.stringify(JSON.parse(expectedAvsc), null, indentation), 4)};
             const actualSerializer = typeScriptToSerializerTypeScript(inputTypescript, './input.ts');
             expect(actualSerializer).toStrictEqual(expectedSerializer);
         });
-        
-        it('deserializer', () => {
-            // Source: ${expectedDeserializerPath}
-            const expectedDeserializer = \`${expectedDeserializer}\`;
-
-            const actualSerializer = typeScriptToDeserializerTypeScript(inputTypescript, './input.ts');
-            expect(actualSerializer).toStrictEqual(expectedDeserializer);
-        });
     });
 `);
 });
@@ -65,7 +55,6 @@ const testFile = `/*
 import {
     typeScriptToAvroSchema,
     typeScriptToSerializerTypeScript,
-    typeScriptToDeserializerTypeScript,
 } from "../../src/generator/typescript-to-avsc";
 
 describe('TypeScript to Avro Schema', () => {

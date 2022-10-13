@@ -6,7 +6,8 @@ When producing data, developers often want to use the language they're fluent in
 Asking a developer to create a schema in the language of the protocol is friction they'd rather not face.
 
 In our case, developers building in TypeScript who want to produce Avro can define their schemas with TypeScript `type`s
-and `interface`s. This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript file.
+and `interface`s.
+This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript file.
 
 ## Usage:
 
@@ -93,38 +94,7 @@ export default function serialize(value: MyInterface): Buffer {
 }
 ```
 
-### 3. Convert TypeScript type to deserializer
-
-Use this when you want to **consume** Avro using a TypeScript interface. \
-Should be used only when you're both the producer and the consumer in different parts of the same codebase, otherwise please use a tool to generate the interface from the schema provided by the producer. \
-Generates a typed deserializer using
-the [avsc](https://github.com/mtth/avsc) library.
-
-_input.ts_
-
-```typescript
-export interface MyInterface {
-    someField?: string;
-}
-```
-
-_deserializer.ts_
-
-```typescript
-import avro from 'avsc';
-import {MyInterface} from './input';
-
-const exactType = avro.Type.forSchema({"name": "MyInterface","fields": [{"name": "someField", "type": "string"}],"type": "record"});
-
-export default function deserialize(value: Buffer): MyInterface {
-    const raw = exactType.fromBuffer(value);
-    return {
-        someField: raw.someField ?? undefined
-    };
-}
-```
-
-### Why do the serializer and deserializer use null coalescing (??)?
+### Why does the serializer use null coalescing (??)?
 
 In TypeScript, the idiomatic way to denote optionality is using the `?` modifier.
 When an optional field is empty, it is 'set' to `undefined`.
@@ -140,18 +110,17 @@ The "manual" conversions are a type-safe way of converting between these two idi
    2. long types
    3. decimal
    4. duration
-   5. docs
-   6. aliases
-   7. default values
-   8. order (fields)
-   9. enums
-   10. arrays
-   11. maps
-   12. unions (ts -> avro)
-   13. fixed
-   14. type references
-   15. not just the interface in the same file
-   16. run tests on the serializer/deserializer to make sure they do what they're supposed to
+   5. aliases
+   6. default values
+   7. order (fields)
+   8. enums
+   9. arrays
+   10. maps
+   11. unions (ts -> avro)
+   12. fixed
+   13. type references
+   14. not just the interface in the same file
+   15. run tests on the serializer/deserializer to make sure they do what they're supposed to
 
 Copyright 2022 Omer van Kloeten
 
