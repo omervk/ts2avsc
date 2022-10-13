@@ -2,7 +2,9 @@
     "name": "ts2avsc",
     "version": "1.0.0",
     "scripts": {
-        "main": "npx ts-node src/main.ts"
+        "main": "npx ts-node src/main.ts",
+        "bootstrap": "node ./tests/generate-tests.js",
+        "test": "jest"
     },
     "devDependencies": {
         "@jest/globals": "^29.1.2",

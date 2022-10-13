@@ -101,6 +101,48 @@ When an optional field is empty, it is 'set' to `undefined`.
 However, in Avro emptiness of optional fields is always denoted using `null`.
 The "manual" conversions are a type-safe way of converting between these two idioms.
 
+# Contributing
+
+## Bootstrapping
+
+1. Clone the repository
+2. Make sure to use the Node version in the `.nvmrc` file (I recommend using `nvm install`).
+3. Run `npm run bootstrap`.
+4. Run `npm run test` to make sure it all worked.
+5. Turn back.
+
+## Design
+
+The design is compositional, which can be seen by reading `src/generator/typescript-to-avsc.ts`:
+
+### `typeScriptToAvroSchema`
+
+Translates an input TypeScript interface into an Avro schema
+
+```mermaid
+graph LR;
+    interface.ts-- toAst -->ts.InterfaceOrType
+    ts.InterfaceOrType-- toAvroSchema -->avsc.Schema
+    avsc.Schema-- writeAvsc -->schema.avsc
+```
+
+### `typeScriptToSerializerTypeScript`
+
+Translates an input TypeScript interface into a typed Avro serializer
+
+```mermaid
+graph LR;
+    interface.ts-- toAst -->ts.InterfaceOrType
+    ts.InterfaceOrType-- toAvroSchema -->avsc.Schema
+    avsc.Schema-- toAvroSerializer -->serializer.ts
+```
+
+### Composed Parts
+
+1. Files in `src/generator/typescript` are responsible for parsing the input to an intermediate model.
+2. Files in `src/generator/avsc` are responsible for converting the above model to a model of the Avro schema and serializing it.
+3. Files in `src/generator/avsc-lib` are responsible for using the above model of the Avro schema and creating a typed serializer for each supported library.
+
 ## // TODO:
 
 1. Test errors and make sure coverage is decent
