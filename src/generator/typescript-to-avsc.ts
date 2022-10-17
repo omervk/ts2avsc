@@ -7,11 +7,11 @@ import toAvroSerializer from "./avsc-lib/serializer";
 export function typeScriptToAvroSchema(typeScriptContents: string): Map<string, string> {
     const ast: ParsedAst = toAst(typeScriptContents);
     const schemas: Schema[] = toAvroSchema(ast);
-    return new Map(schemas.map(schema => [schema.name, writeAvsc(schema)]));
+    return new Map(schemas.map(schema => [`${schema.name}.avsc`, writeAvsc(schema)]));
 }
 
 export function typeScriptToSerializerTypeScript(typeScriptContents: string, relativePathToTypeScript: string): Map<string, string> {
     const ast: ParsedAst = toAst(typeScriptContents);
     const schemas: Schema[] = toAvroSchema(ast);
-    return new Map(schemas.map(schema => [schema.name, toAvroSerializer(relativePathToTypeScript, schema)]));
+    return new Map(schemas.map(schema => [`${schema.name}.serializer.ts`, toAvroSerializer(relativePathToTypeScript, schema)]));
 }

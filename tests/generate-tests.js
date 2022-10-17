@@ -39,8 +39,8 @@ ${expectedOutputs.map(({ name, avsc }) => {
             // Source: ${expectedAvscPath}
             const expectedAvroSchemaFor${name} = 
 ${indent(JSON.stringify(JSON.parse(expectedAvsc), null, indentation), 4)};
-            expect(actualSchemaMap.has("${name}")).toStrictEqual(true);
-            const actualAvroSchemaFor${name} = JSON.parse(actualSchemaMap.get("${name}")!);
+            expect(actualSchemaMap.has("${name}.avsc")).toStrictEqual(true);
+            const actualAvroSchemaFor${name} = JSON.parse(actualSchemaMap.get("${name}.avsc")!);
             expect(actualAvroSchemaFor${name}).toStrictEqual(expectedAvroSchemaFor${name});
 `;
 }).join('')}
@@ -56,8 +56,8 @@ ${expectedOutputs.map(({ name, serializer }) => {
     return `
             // Source: ${expectedSerializerPath}
             const expectedSerializerFor${name} = \`${expectedSerializer}\`;
-            expect(actualSerializerMap.has("${name}")).toStrictEqual(true);
-            const actualSerializerFor${name} = actualSerializerMap.get("${name}")!;
+            expect(actualSerializerMap.has("${name}.serializer.ts")).toStrictEqual(true);
+            const actualSerializerFor${name} = actualSerializerMap.get("${name}.serializer.ts")!;
             expect(actualSerializerFor${name}).toStrictEqual(expectedSerializerFor${name});
 `;
 }).join('')}
