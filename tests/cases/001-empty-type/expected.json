@@ -1,0 +1,7 @@
+[
+    {
+        "name": "EmptyType",
+        "avsc": "output.avsc",
+        "serializer": "serializer.ts"
+    }
+]

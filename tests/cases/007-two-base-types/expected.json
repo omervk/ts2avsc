@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Interface7",
+        "avsc": "output-interface.avsc",
+        "serializer": "serializer-interface.ts"
+    },
+    {
+        "name": "Type7",
+        "avsc": "output-type.avsc",
+        "serializer": "serializer-type.ts"
+    }
+]

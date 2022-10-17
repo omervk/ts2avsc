@@ -5,25 +5,66 @@ import {
     FieldDeclaration,
     InterfaceOrType,
     NullLiteral,
-    NumberLiteral,
+    NumberLiteral, ReferencedType,
     StringLiteral,
     Type
 } from "./types";
+const findDirectedCycle = require('find-cycle/directed');
 
-export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
-    return traverseSourceFile(sourceFile);
+export interface ParsedAst {
+    readonly types: InterfaceOrType[];
+    readonly referenceMap: Map<string, Set<string>>;
+}
+
+export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
+    // Referenced type -> Referencing types
+    const referenceMap: Map<string, Set<string>> = new Map<string, Set<string>>();
+    const existingTypes: Map<string, InterfaceOrType> = new Map<string, InterfaceOrType>();
+    
+    traverseSourceFile(sourceFile);
+    
+    // Check that there were interfaces to convert
+    if (existingTypes.size === 0) {
+        throw new Error("No interfaces or types found that could be converted");
+    }
+    
+    // Check that there are no unresolved references
+    const unknownReferencedTypes = Array
+        .of(...referenceMap.keys())
+        .filter(referencedType => !existingTypes.has(referencedType));
+    
+    if (unknownReferencedTypes.length > 0) {
+        throw new Error(`Unable to find referenced types: ${unknownReferencedTypes
+            .map(t => `${t} referenced by ${Array.of(...(referenceMap.get(t) || new Set()).values()).join(', ')}`)}`)
+    }
+    
+    // Check that there are no cyclical references
+    // TODO: Test this
+    existingTypes.forEach(t => {
+        // @ts-ignore
+        const cycle: (string[] | undefined) = findDirectedCycle(new Set([t]), (refType: string) => referenceMap.get(refType));
+        
+        if (cycle) {
+            throw new Error(`Found a cyclical reference along the path ${cycle.reverse().join('->')}`)
+        }
+    })
+    
+    return {
+        types: Array.of(...existingTypes.values()),
+        referenceMap,
+    };
 
     function conversionError(node: ts.ReadonlyTextRange, message: string): ConversionError {
         return new ConversionError(message, sourceFile.getLineAndCharacterOfPosition(node.pos));
     }
     
-    function traverseTypeLiteral(node: ts.TypeLiteralNode): FieldDeclaration[] {
+    function traverseTypeLiteral(node: ts.TypeLiteralNode, containerTypeName: string): FieldDeclaration[] {
         const fields: FieldDeclaration[] = [];
 
         ts.forEachChild(node, child => {
             switch (child.kind) {
                 case ts.SyntaxKind.PropertySignature:
-                    fields.push(traversePropertySignature(child as ts.PropertySignature));
+                    fields.push(traversePropertySignature(child as ts.PropertySignature, containerTypeName));
                     break;
                 default:
                     throw conversionError(child,`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(node.kind)}`);
@@ -68,10 +109,10 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
                 case ts.SyntaxKind.Identifier: case ts.SyntaxKind.ExportKeyword:
                     break;
                 case ts.SyntaxKind.PropertySignature:
-                    fields.push(traversePropertySignature(child as ts.PropertySignature));
+                    fields.push(traversePropertySignature(child as ts.PropertySignature, decl.name.text));
                     break;
                 case ts.SyntaxKind.TypeLiteral:
-                    fields.push(...traverseTypeLiteral(child as ts.TypeLiteralNode))
+                    fields.push(...traverseTypeLiteral(child as ts.TypeLiteralNode, decl.name.text))
                     break;
                 default:
                     console.log(`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(decl.kind)}`);
@@ -96,7 +137,7 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
         return;
     }
 
-    function toType(type: ts.Node): Type {
+    function toType(type: ts.Node, referencingType: string): Type {
         switch (type.kind) {
             case ts.SyntaxKind.StringKeyword:
                 // if (annotations.includes('uuid')) {
@@ -118,8 +159,10 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
                     if (typeName.text === Buffer.name) {
                         return 'Buffer';
                     }
+                    
+                    referenceMap.set(typeName.text, new Set([referencingType, ...(referenceMap.get(typeName.text) || new Set())]));
 
-                    throw conversionError(type, `Using a custom type like ${typeName.text} is not supported.`);
+                    return new ReferencedType(typeName.text);
                 }
 
                 throw conversionError(type, "We don't yet support QualifiedName as a TypeReference for a property.")
@@ -160,7 +203,7 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
             .filter((s): s is string => true);
     }
 
-    function traversePropertySignature(prop: ts.PropertySignature): FieldDeclaration {
+    function traversePropertySignature(prop: ts.PropertySignature, containerTypeName: string): FieldDeclaration {
         if (!('escapedText' in prop.name)) {
             throw conversionError(prop, "Property has no name?");
         }
@@ -171,44 +214,43 @@ export function parseAst(sourceFile: ts.SourceFile): InterfaceOrType {
 
         return {
             name: prop.name.text,
-            type: toType(prop.type),
+            type: toType(prop.type, containerTypeName),
             optional: !!prop.questionToken,
             annotations: getAvroAnnotationsBefore(prop),
             jsDoc: getJsDoc(prop),
         };
     }
 
-    function traverseSourceFile(node: ts.SourceFile): InterfaceOrType {
-        let interfaceOrType: InterfaceOrType | undefined;
-
-        ts.forEachChild(node, child => {
-            if (interfaceOrType !== undefined) {
-                return;
+    function traverseSourceFile(node: ts.SourceFile): void {
+        function addDeclaration(decl: InterfaceOrType, child: ts.Node) {
+            if (existingTypes.has(decl.name)) {
+                throw conversionError(child, `Multiple definitions of the same name ${decl.name}`);
             }
 
+            existingTypes.set(decl.name, decl);
+        }
+
+        ts.forEachChild(node, child => {
             switch (child.kind) {
                 case ts.SyntaxKind.InterfaceDeclaration:
-                    interfaceOrType = traverseDecl(child as ts.InterfaceDeclaration);
+                    addDeclaration(traverseDecl(child as ts.InterfaceDeclaration), child);
                     break;
 
                 case ts.SyntaxKind.TypeAliasDeclaration:
-                    interfaceOrType = traverseDecl(child as ts.TypeAliasDeclaration);
+                    addDeclaration(traverseDecl(child as ts.TypeAliasDeclaration), child);
+                    break;
+                    
+                case ts.SyntaxKind.EndOfFileToken:
                     break;
 
                 default:
                     throw conversionError(child, `Unknown element type ${decodeSyntaxKind(child.kind)} in the context of a SourceFile.`);
             }
         });
-
-        if (interfaceOrType === undefined) {
-            throw conversionError(node, 'No interface found to convert.');
-        }
-
-        return interfaceOrType;
     }
 }
 
-export function toAst(typeScriptContents: string): InterfaceOrType {
+export function toAst(typeScriptContents: string): ParsedAst {
     const sourceFile = ts.createSourceFile("dummy.ts", typeScriptContents, ts.ScriptTarget.ES5);
     return parseAst(sourceFile);
 }

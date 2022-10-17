@@ -1,9 +1,9 @@
 export type Schema = Record;
 
-export type Type = PrimitiveTypes | Union | LogicalTypes; // | Enum | Array | Map | Union | Fixed;
+export type Type = PrimitiveTypes | Union | LogicalTypes | Record; // | Enum | Array | Map | Fixed;
 export type PrimitiveTypes = 'null' | 'boolean' | 'int' | 'long' | 'float' | 'double' | 'bytes' | 'string';
 
-export type LogicalTypes = 
+export type LogicalTypes =
     Uuid
     // | Decimal
     | Date
@@ -13,16 +13,27 @@ export type LogicalTypes =
     | TimestampMicros
     | LocalTimestampMillis
     | LocalTimestampMicros
-    // | Duration;
 
+// | Duration;
 
-export type Record = {
-    name: string;
-    namespace?: string;
-    doc?: string;
-    aliases?: string[];
-    fields: RecordField[];
-    type: 'record'
+export class Record {
+    constructor(public readonly name: string,
+                public readonly fields: RecordField[],
+                options?: Partial<{
+                    namespace: string,
+                    doc: string,
+                    aliases: string[],
+                }>) {
+        
+        this.namespace = options?.namespace;
+        this.doc = options?.doc;
+        this.aliases = options?.aliases;
+    }
+
+    public readonly type: 'record' = 'record';
+    public readonly namespace?: string;
+    public readonly doc?: string;
+    public readonly aliases?: string[];
 }
 
 export type RecordField = {

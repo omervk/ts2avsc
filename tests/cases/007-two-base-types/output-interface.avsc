@@ -1,0 +1,10 @@
+{
+    "fields": [
+        {
+            "name": "num",
+            "type": "double"
+        }
+    ],
+    "name": "Interface7",
+    "type": "record"
+}

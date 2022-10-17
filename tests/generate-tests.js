@@ -14,12 +14,11 @@ const allIts = [];
 
 cases.forEach($case => {
     const itName = $case.replace(/-/g, ' ');
-    const inputFilePath = `${baseDir}/${$case}/input.ts`;
-    const expectedAvscPath = `${baseDir}/${$case}/output.avsc`;
-    const expectedSerializerPath = `${baseDir}/${$case}/serializer.ts`;
+    const baseCaseDir = `${baseDir}/${$case}`;
+    const inputFilePath = `${baseCaseDir}/input.ts`;
     const input = readFileSync(inputFilePath).toString();
-    const expectedAvsc = readFileSync(expectedAvscPath).toString();
-    const expectedSerializer = readFileSync(expectedSerializerPath).toString();
+
+    const expectedOutputs = JSON.parse(readFileSync(`${baseCaseDir}/expected.json`).toString());
 
     allIts.push(
 `
@@ -30,19 +29,38 @@ ${indent(input, 3)}
         \`;
 
         it('avsc', () => {
+            const actualSchemaMap = typeScriptToAvroSchema(inputTypescript);
+            expect(actualSchemaMap.size).toStrictEqual(${expectedOutputs.length});
+${expectedOutputs.map(({ name, avsc }) => {
+    const expectedAvscPath = `${baseCaseDir}/${avsc}`;
+    const expectedAvsc = readFileSync(expectedAvscPath).toString();
+
+    return `
             // Source: ${expectedAvscPath}
-            const expectedAvroSchema = 
+            const expectedAvroSchemaFor${name} = 
 ${indent(JSON.stringify(JSON.parse(expectedAvsc), null, indentation), 4)};
-            const actualAvroSchema = JSON.parse(typeScriptToAvroSchema(inputTypescript));
-            expect(actualAvroSchema).toStrictEqual(expectedAvroSchema);
+            expect(actualSchemaMap.has("${name}")).toStrictEqual(true);
+            const actualAvroSchemaFor${name} = JSON.parse(actualSchemaMap.get("${name}")!);
+            expect(actualAvroSchemaFor${name}).toStrictEqual(expectedAvroSchemaFor${name});
+`;
+}).join('')}
         });
         
         it('serializer', () => {
-            // Source: ${expectedSerializerPath}
-            const expectedSerializer = \`${expectedSerializer}\`;
+            const actualSerializerMap = typeScriptToSerializerTypeScript(inputTypescript, './input.ts');
+            expect(actualSerializerMap.size).toStrictEqual(${expectedOutputs.length});
+${expectedOutputs.map(({ name, serializer }) => {
+    const expectedSerializerPath = `${baseCaseDir}/${serializer}`;
+    const expectedSerializer = readFileSync(expectedSerializerPath).toString();
 
-            const actualSerializer = typeScriptToSerializerTypeScript(inputTypescript, './input.ts');
-            expect(actualSerializer).toStrictEqual(expectedSerializer);
+    return `
+            // Source: ${expectedSerializerPath}
+            const expectedSerializerFor${name} = \`${expectedSerializer}\`;
+            expect(actualSerializerMap.has("${name}")).toStrictEqual(true);
+            const actualSerializerFor${name} = actualSerializerMap.get("${name}")!;
+            expect(actualSerializerFor${name}).toStrictEqual(expectedSerializerFor${name});
+`;
+}).join('')}
         });
     });
 `);

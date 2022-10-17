@@ -1,0 +1,38 @@
+{
+    "name": "Interface6",
+    "type": "record",
+    "fields": [
+        {
+            "name": "optionalInterface",
+            "type": [
+                "null",
+                {
+                    "fields": [
+                        {
+                            "name": "required",
+                            "type": "boolean"
+                        }
+                    ],
+                    "name": "RefInterface6",
+                    "type": "record"
+                }
+            ]
+        },
+        {
+            "name": "requiredType",
+            "type": {
+                "fields": [
+                    {
+                        "name": "optional",
+                        "type": [
+                            "null",
+                            "boolean"
+                        ]
+                    }
+                ],
+                "name": "RefType6",
+                "type": "record"
+            }
+        }
+    ]
+}

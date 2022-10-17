@@ -1,0 +1,7 @@
+[
+    {
+        "name": "EmptyInterface",
+        "avsc": "output.avsc",
+        "serializer": "serializer.ts"
+    }
+]

@@ -1,17 +1,17 @@
 import avro from 'avsc';
-import { Interface3 } from './input';
+import { Interface2 } from './input';
 
-const exactType = avro.Type.forSchema({"name":"Interface3","fields":[{"name":"requiredBool","type":"boolean"},{"name":"optionalBool","type":["null","boolean"]},{"name":"requiredBytes","type":"bytes"},{"name":"optionalBytes","type":["null","bytes"]},{"name":"requiredString","type":"string"},{"name":"optionalString","type":["null","string"]},{"name":"optionalDouble","type":["null","double"]},{"name":"requiredDouble","type":"double"}],"type":"record"});
+const exactType = avro.Type.forSchema({"name":"Interface2","fields":[{"name":"requiredBool","type":"boolean"},{"name":"optionalBool","type":["null","boolean"]},{"name":"requiredBytes","type":"bytes"},{"name":"optionalBytes","type":["null","bytes"]},{"name":"requiredString","type":"string"},{"name":"optionalString","type":["null","string"]},{"name":"optionalDouble","type":["null","double"]},{"name":"requiredDouble","type":"double"}],"type":"record"});
 
-export default function serialize(value: Interface3): Buffer {
+export default function serialize(value: Interface2): Buffer {
     return exactType.toBuffer({
         requiredBool: value.requiredBool,
-        optionalBool: value.optionalBool ?? null,
+        optionalBool: value.optionalBool === undefined ? null : value.optionalBool,
         requiredBytes: value.requiredBytes,
-        optionalBytes: value.optionalBytes ?? null,
+        optionalBytes: value.optionalBytes === undefined ? null : value.optionalBytes,
         requiredString: value.requiredString,
-        optionalString: value.optionalString ?? null,
-        optionalDouble: value.optionalDouble ?? null,
+        optionalString: value.optionalString === undefined ? null : value.optionalString,
+        optionalDouble: value.optionalDouble === undefined ? null : value.optionalDouble,
         requiredDouble: value.requiredDouble
     });
 }

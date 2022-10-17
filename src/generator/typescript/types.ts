@@ -12,10 +12,10 @@ export type FieldDeclaration = {
     jsDoc?: string;
 }
 
-export type Type = PrimitiveType | LiteralType | OtherType;
+export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType;
 export type PrimitiveType = 'number' | 'string' | 'boolean'
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
-export type OtherType = 'Buffer'; // TODO: Find a better name
+export type StandardType = 'Buffer'; // TODO: Find a better name
 
 export interface Literal {
     readonly kind: string;   
@@ -43,5 +43,10 @@ export class NumberLiteral {
     public readonly kind: string = 'number';
 
     constructor(public readonly literal: number) {
+    }
+}
+
+export class ReferencedType {
+    constructor(public readonly name: string) {
     }
 }

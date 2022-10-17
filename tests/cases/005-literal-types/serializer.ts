@@ -5,13 +5,13 @@ const exactType = avro.Type.forSchema({"name":"Interface5","fields":[{"name":"op
 
 export default function serialize(value: Interface5): Buffer {
     return exactType.toBuffer({
-        optionalNull: value.optionalNull ?? null,
+        optionalNull: value.optionalNull === undefined ? null : value.optionalNull,
         requiredNull: value.requiredNull,
-        optionalLitNumber: value.optionalLitNumber ?? null,
+        optionalLitNumber: value.optionalLitNumber === undefined ? null : value.optionalLitNumber,
         requiredLitNumber: value.requiredLitNumber,
-        optionalLitString: value.optionalLitString ?? null,
+        optionalLitString: value.optionalLitString === undefined ? null : value.optionalLitString,
         requiredLitString: value.requiredLitString,
-        optionalLitBoolean: value.optionalLitBoolean ?? null,
+        optionalLitBoolean: value.optionalLitBoolean === undefined ? null : value.optionalLitBoolean,
         requiredLitBoolean: value.requiredLitBoolean
     });
 }

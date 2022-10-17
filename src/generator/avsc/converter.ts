@@ -1,6 +1,8 @@
 import * as avsc from "./types";
 import * as ts from "../typescript/types";
-import {BooleanLiteral, NullLiteral, NumberLiteral, PrimitiveType, StringLiteral} from "../typescript/types";
+import {ParsedAst} from "../typescript/parser";
+import {RecordField} from "./types";
+import {FieldDeclaration} from "../typescript/types";
 
 function chooseNumberAnnotation(annotationsOnType: string[]): string {
     const numberAnnotations: string[] = [
@@ -16,9 +18,15 @@ function chooseNumberAnnotation(annotationsOnType: string[]): string {
     return validAnnotations?.[0] || 'double';
 }
 
-function toBaseType(type: ts.Type, annotationsOnType: string[]): avsc.Type {
+function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst): avsc.Type {
     // TODO: Type check annotations (during parsing?)
     // TODO: Warn when some annotations are dropped
+    
+    if (type instanceof ts.ReferencedType) {
+        const interfaceOrType: ts.InterfaceOrType = ast.types.find(t => t.name === type.name)!;
+        
+        return toRecordType(interfaceOrType, ast);
+    }
     
     const isLiteralType = (t: any & ts.Type): t is ts.Literal => {
         return !!t.kind;
@@ -71,8 +79,8 @@ function toBaseType(type: ts.Type, annotationsOnType: string[]): avsc.Type {
     throw new Error(`Unable to translate type ${type} with annotations [${annotationsOnType.join(', ')}]. Please make sure it's a valid combination.`);
 }
 
-function toType(type: ts.Type, optional: boolean, annotationsOnType: string[]): avsc.Type {
-    const baseType = toBaseType(type, annotationsOnType);
+function toType(type: ts.Type, optional: boolean, annotationsOnType: string[], ast: ParsedAst): avsc.Type {
+    const baseType: avsc.Type = toBaseType(type, annotationsOnType, ast);
 
     if (optional) {
         if (baseType instanceof avsc.Union) {
@@ -86,23 +94,31 @@ function toType(type: ts.Type, optional: boolean, annotationsOnType: string[]): 
     return baseType;
 }
 
-function toField(field: ts.FieldDeclaration): avsc.RecordField {
+function toField(field: FieldDeclaration, ast: ParsedAst): RecordField {
     return {
         name: field.name,
-        type: toType(field.type, field.optional, field.annotations),
+        type: toType(field.type, field.optional, field.annotations, ast),
         doc: field.jsDoc,
     };
 }
 
-function toFields(fields: ts.FieldDeclaration[]): avsc.RecordField[] {
-    return fields.map(f => toField(f));
+function toFields(fields: FieldDeclaration[], ast: ParsedAst): RecordField[] {
+    return fields.map(f => toField(f, ast));
 }
 
-export default function toAvroSchema(ast: ts.InterfaceOrType): avsc.Schema {
-    return {
-        name: ast.name,
-        fields: toFields(ast.fields),
-        type: "record",
-        doc: ast.jsDoc
-    }
+function resolveRootTypes(ast: ParsedAst): Set<string> {
+    // A root type is a type that is never referenced by other types
+    return new Set(ast.types.filter(t => !ast.referenceMap.has(t.name)).map(t => t.name));
+}
+
+function toRecordType(t: ts.InterfaceOrType, ast: ParsedAst): avsc.Schema {
+    return new avsc.Record(t.name, toFields(t.fields, ast), { doc: t.jsDoc });
+}
+
+export default function toAvroSchema(ast: ParsedAst): avsc.Schema[] {
+    const rootTypes: Set<string> = resolveRootTypes(ast);
+    
+    return ast.types
+        .filter(t => rootTypes.has(t.name))
+        .map(t => toRecordType(t, ast));
 }

@@ -1,0 +1,7 @@
+[
+    {
+        "name": "Interface4",
+        "avsc": "output.avsc",
+        "serializer": "serializer.ts"
+    }
+]

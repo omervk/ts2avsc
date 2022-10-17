@@ -1,4 +1,4 @@
-export interface Interface3 {
+export interface Interface2 {
     requiredBool: boolean;
     optionalBool?: boolean;
     

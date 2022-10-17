@@ -89,12 +89,12 @@ const exactType = avro.Type.forSchema({"name": "MyInterface","fields": [{"name":
 
 export default function serialize(value: MyInterface): Buffer {
     return exactType.toBuffer({
-        someField: value.someField ?? null
+        someField: value.someField === undefined ? null : value.someField
     });
 }
 ```
 
-### Why does the serializer use null coalescing (??)?
+### Why does the serializer manually convert `undefined`s to `null`s?
 
 In TypeScript, the idiomatic way to denote optionality is using the `?` modifier.
 When an optional field is empty, it is 'set' to `undefined`.
@@ -121,9 +121,9 @@ Translates an input TypeScript interface into an Avro schema
 
 ```mermaid
 graph LR;
-    interface.ts-- toAst -->ts.InterfaceOrType
-    ts.InterfaceOrType-- toAvroSchema -->avsc.Schema
-    avsc.Schema-- writeAvsc -->schema.avsc
+    interface.ts-- toAst -->ParsedAst
+    ParsedAst-- toAvroSchema -->Schemas
+    Schemas-- writeAvsc -->schema.avsc
 ```
 
 ### `typeScriptToSerializerTypeScript`
@@ -132,23 +132,23 @@ Translates an input TypeScript interface into a typed Avro serializer
 
 ```mermaid
 graph LR;
-    interface.ts-- toAst -->ts.InterfaceOrType
-    ts.InterfaceOrType-- toAvroSchema -->avsc.Schema
-    avsc.Schema-- toAvroSerializer -->serializer.ts
+    interface.ts-- toAst -->ParsedAst
+    ParsedAst-- toAvroSchema -->Schemas
+    Schemas-- toAvroSerializer -->serializer.ts
 ```
 
 ### Composed Parts
 
 1. Files in `src/generator/typescript` are responsible for parsing the input to an intermediate model.
-2. Files in `src/generator/avsc` are responsible for converting the above model to a model of the Avro schema and serializing it.
+2. Files in `src/generator/avsc` are responsible for converting the above model to a model of the Avro schemas and serializing each one.
 3. Files in `src/generator/avsc-lib` are responsible for using the above model of the Avro schema and creating a typed serializer for each supported library.
 
 ## // TODO:
 
 1. Test errors and make sure coverage is decent
-2. Document type narrowing using comment annotations 
+2. Document type narrowing using comment annotations
 3. Add language features:
-   1. companion types library
+   1. companion types library - be modular to existing libraries, don't reinvent them
    2. long types
    3. decimal
    4. duration
@@ -160,9 +160,10 @@ graph LR;
    10. maps
    11. unions (ts -> avro)
    12. fixed
-   13. type references
+   13. type references outside the file's scope
    14. not just the interface in the same file
    15. run tests on the serializer/deserializer to make sure they do what they're supposed to
+4. Document multiple root types (schema and serializer outputs)
 
 Copyright 2022 Omer van Kloeten
 
