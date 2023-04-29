@@ -97,6 +97,83 @@ When an optional field is empty, it is 'set' to `undefined`.
 However, in Avro emptiness of optional fields is always denoted using `null`.
 The "manual" conversions are a type-safe way of converting between these two idioms.
 
+## Features
+
+### Type Conversion
+
+Avro has types far richer than the default JSON type system, including logical types. However, it is a conscious choice not to create types that complicate users' domain.
+
+Naturally supported types are:
+ 
+| TypeScript | Avro      |
+|------------|-----------|
+| `boolean`  | `boolean` |
+| `Buffer`   | `bytes`   |
+| `string`   | `string`  |
+| `number`   | `double`  |
+| `null`     | `null`    |
+
+Literal types are also automatically translated to their respective Avro types. Optional fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`).
+
+If you're looking to further narrow the types you'll be producing, there are two ways to get there:
+
+#### 1. Annotations
+
+By using an annotation, you can let the tool know that you intend to produce a narrower type, e.g.:
+
+```typescript
+// @avro int
+thisWillBeAnInt: number;
+```
+
+Supported types:
+
+| Avro Type Annotation           | Field Type |
+|--------------------------------|------------|
+| `@avro int`                    | `number`   |
+| `@avro float`                  | `number`   |
+| `@avro double`                 | `number`   |
+| `@avro long`                   | `number`   |
+| `@avro date`                   | `number`   |
+| `@avro time-millis`            | `number`   |
+| `@avro time-micros`            | `number`   |
+| `@avro timestamp-millis`       | `number`   |
+| `@avro timestamp-micros`       | `number`   |
+| `@avro local-timestamp-millis` | `number`   |
+| `@avro local-timestamp-micros` | `number`   |
+| `@avro uuid`                   | `string`   |
+
+You can see an example of all these conversions from [TypeScript](./tests/cases/003-annotations/input.ts) to [Avro](./tests/cases/003-annotations/output.avsc) in the [tests](./tests/cases/003-annotations).
+
+#### 2. Library Types (WIP)
+
+By using an type from this tool, you can let it know that you intend to produce a narrower type, e.g.:
+
+```typescript
+thisWillBeAnInt: AvroInt;
+```
+
+The library type is only a type alias of the base JSON type to reduce friction when working with the interfaces.
+
+Supported types:
+
+| Avro Type Annotation       | Field Type |
+|----------------------------|------------|
+| `AvroInt`                  | `number`   |
+| `AvroFloat`                | `number`   |
+| `AvroDouble`               | `number`   |
+| `AvroLong`                 | `number`   |
+| `AvroDate`                 | `number`   |
+| `AvroTimeMillis`           | `number`   |
+| `AvroTimeMicros`           | `number`   |
+| `AvroTimestampMillis`      | `number`   |
+| `AvroTimestampMicros`      | `number`   |
+| `AvroLocalTimestampMillis` | `number`   |
+| `AvroLocalTimestampMicros` | `number`   |
+| `AvroUuid`                 | `string`   |
+
+You can see an example of all these conversions from [TypeScript](./tests/cases/008-library-types/input.ts) to [Avro](./tests/cases/008-library-types/output.avsc) in the [tests](./tests/cases/008-library-types).
+
 ## Usage
 
 Don't... but if you have to:
@@ -186,26 +263,24 @@ graph LR;
 ## // TODO:
 
 1. Test errors and make sure coverage is decent
-2. Document type narrowing using comment annotations
-3. Add language features:
-   1. companion types library - be modular to existing libraries, don't reinvent them
-   2. long types
-   3. decimal
-   4. duration
-   5. aliases
-   6. default values
-   7. order (fields)
-   8. enums
-   9. arrays
-   10. maps
-   11. unions (ts -> avro)
-   12. fixed
-   13. type references outside the file's scope
-   14. not just the interface in the same file
-   15. run tests on the serializer/deserializer to make sure they do what they're supposed to
-4. Document multiple root types (schema and serializer outputs)
-5. Split the command line tool from the types library
-6. Consider using actual newtypes for types library
+2. Add language features:
+   1. long types
+   2. decimal
+   3. duration
+   4. aliases
+   5. default values
+   6. order (fields)
+   7. enums
+   8. arrays
+   9. maps
+   10. unions (ts -> avro)
+   11. fixed
+   12. type references outside the file's scope
+   13. not just the interface in the same file
+   14. run tests on the serializer/deserializer to make sure they do what they're supposed to
+3. Document multiple root types (schema and serializer outputs)
+4. Split the command line tool from the types library
+5. Consider using actual newtypes for types library
 
 Copyright 2022 Omer van Kloeten
 
