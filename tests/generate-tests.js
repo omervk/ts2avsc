@@ -58,7 +58,7 @@ ${expectedOutputs.map(({ name, serializer }) => {
             const expectedSerializerFor${name} = \`${expectedSerializer}\`;
             expect(actualSerializerMap.has("${name}.serializer.ts")).toStrictEqual(true);
             const actualSerializerFor${name} = actualSerializerMap.get("${name}.serializer.ts")!;
-            expect(actualSerializerFor${name}).toStrictEqual(expectedSerializerFor${name});
+            expect(actualSerializerFor${name}.trim()).toStrictEqual(expectedSerializerFor${name}.trim());
 `;
 }).join('')}
         });

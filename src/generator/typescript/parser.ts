@@ -9,6 +9,17 @@ import {
     StringLiteral,
     Type
 } from "./types";
+import {
+    AvroDate,
+    AvroDouble,
+    AvroFloat,
+    AvroInt, AvroLocalTimeMicros, AvroLocalTimeMillis,
+    AvroLong,
+    AvroTimeMicros,
+    AvroTimeMillis, AvroTimestampMicros,
+    AvroTimestampMillis, AvroUuid
+} from "../../types/index";
+
 const findDirectedCycle = require('find-cycle/directed');
 
 export interface ParsedAst {
@@ -16,39 +27,52 @@ export interface ParsedAst {
     readonly referenceMap: Map<string, Set<string>>;
 }
 
+const builtInTypes = ['AvroInt',
+    'AvroFloat',
+    'AvroDouble',
+    'AvroLong',
+    'AvroDate',
+    'AvroTimeMillis',
+    'AvroTimeMicros',
+    'AvroTimestampMillis',
+    'AvroTimestampMicros',
+    'AvroLocalTimeMillis',
+    'AvroLocalTimeMicros',
+    'AvroUuid'];
+
 export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
     // Referenced type -> Referencing types
     const referenceMap: Map<string, Set<string>> = new Map<string, Set<string>>();
     const existingTypes: Map<string, InterfaceOrType> = new Map<string, InterfaceOrType>();
-    
+
     traverseSourceFile(sourceFile);
-    
+
     // Check that there were interfaces to convert
     if (existingTypes.size === 0) {
         throw new Error("No interfaces or types found that could be converted");
     }
-    
-    // Check that there are no unresolved references
+
+    // Check that there are no unresolved references and take built-in types into account
     const unknownReferencedTypes = Array
         .of(...referenceMap.keys())
-        .filter(referencedType => !existingTypes.has(referencedType));
-    
+        .filter(referencedType => !existingTypes.has(referencedType) && !builtInTypes.some(v => v === referencedType));
+
     if (unknownReferencedTypes.length > 0) {
         throw new Error(`Unable to find referenced types: ${unknownReferencedTypes
             .map(t => `${t} referenced by ${Array.of(...(referenceMap.get(t) || new Set()).values()).join(', ')}`)}`)
     }
-    
+
     // Check that there are no cyclical references
     // TODO: Test this
     existingTypes.forEach(t => {
         // @ts-ignore
         const cycle: (string[] | undefined) = findDirectedCycle(new Set([t]), (refType: string) => referenceMap.get(refType));
-        
+
         if (cycle) {
             throw new Error(`Found a cyclical reference along the path ${cycle.reverse().join('->')}`)
         }
     })
-    
+
     return {
         types: Array.of(...existingTypes.values()),
         referenceMap,
@@ -57,7 +81,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
     function conversionError(node: ts.ReadonlyTextRange, message: string): ConversionError {
         return new ConversionError(message, sourceFile.getLineAndCharacterOfPosition(node.pos));
     }
-    
+
     function traverseTypeLiteral(node: ts.TypeLiteralNode, containerTypeName: string): FieldDeclaration[] {
         const fields: FieldDeclaration[] = [];
 
@@ -67,7 +91,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                     fields.push(traversePropertySignature(child as ts.PropertySignature, containerTypeName));
                     break;
                 default:
-                    throw conversionError(child,`Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(node.kind)}`);
+                    throw conversionError(child, `Unknown element type ${decodeSyntaxKind(child.kind)} in the context of ${decodeSyntaxKind(node.kind)}`);
             }
         });
 
@@ -79,11 +103,11 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
             .filter(child => child.kind === ts.SyntaxKind.JSDoc)
             .map(child => {
                 const comment = (child as ts.JSDoc).comment;
-                
+
                 if (comment === undefined) {
                     return '';
                 }
-                
+
                 if (typeof comment === 'string') {
                     return comment;
                 }
@@ -101,12 +125,13 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
         if (!decl.modifiers?.find(mod => mod.kind === ts.SyntaxKind.ExportKeyword)) {
             throw conversionError(decl, `Unable to find an 'export' modifier on ${decl.name.text}. Please add it and try again.`)
         }
-        
+
         const fields: FieldDeclaration[] = [];
 
         ts.forEachChild(decl, child => {
             switch (child.kind) {
-                case ts.SyntaxKind.Identifier: case ts.SyntaxKind.ExportKeyword:
+                case ts.SyntaxKind.Identifier:
+                case ts.SyntaxKind.ExportKeyword:
                     break;
                 case ts.SyntaxKind.PropertySignature:
                     fields.push(traversePropertySignature(child as ts.PropertySignature, decl.name.text));
@@ -159,7 +184,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                     if (typeName.text === Buffer.name) {
                         return 'Buffer';
                     }
-                    
+
                     referenceMap.set(typeName.text, new Set([referencingType, ...(referenceMap.get(typeName.text) || new Set())]));
 
                     return new ReferencedType(typeName.text);
@@ -173,12 +198,12 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                 if (literal.kind === ts.SyntaxKind.NullKeyword) {
                     return new NullLiteral();
                 }
-                
+
                 // TODO: BigIntLiteral
                 if (literal.kind === ts.SyntaxKind.StringLiteral) {
                     return new StringLiteral(literal.text);
                 }
-                
+
                 if (literal.kind === ts.SyntaxKind.NumericLiteral) {
                     return new NumberLiteral(parseFloat(literal.text));
                 }
@@ -186,7 +211,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                 if (literal.kind === ts.SyntaxKind.TrueKeyword) {
                     return new BooleanLiteral(true);
                 }
-                
+
                 if (literal.kind === ts.SyntaxKind.FalseKeyword) {
                     return new BooleanLiteral(false);
                 }

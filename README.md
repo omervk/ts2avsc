@@ -204,7 +204,11 @@ graph LR;
    14. not just the interface in the same file
    15. run tests on the serializer/deserializer to make sure they do what they're supposed to
 4. Document multiple root types (schema and serializer outputs)
+5. Split the command line tool from the types library
+6. Consider using actual newtypes for types library
 
 Copyright 2022 Omer van Kloeten
 
 (I'll remove the copyright once this is no longer a WIP project)
+
+Prior art: https://github.com/lbovet/typson

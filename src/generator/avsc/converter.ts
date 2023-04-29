@@ -21,19 +21,50 @@ function chooseNumberAnnotation(annotationsOnType: string[]): string {
 function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst): avsc.Type {
     // TODO: Type check annotations (during parsing?)
     // TODO: Warn when some annotations are dropped
-    
+
     if (type instanceof ts.ReferencedType) {
-        const interfaceOrType: ts.InterfaceOrType = ast.types.find(t => t.name === type.name)!;
-        
+        const interfaceOrType: ts.InterfaceOrType | undefined = ast.types.find(t => t.name === type.name);
+
+        if (!interfaceOrType) {
+            switch (type.name) {
+                case 'AvroInt':
+                    return 'int';
+                case 'AvroFloat':
+                    return 'float';
+                case 'AvroDouble':
+                    return 'double';
+                case 'AvroLong':
+                    return 'long';
+                case 'AvroDate':
+                    return new avsc.Date();
+                case 'AvroTimeMillis':
+                    return new avsc.TimeMillis();
+                case 'AvroTimeMicros':
+                    return new avsc.TimeMicros();
+                case 'AvroTimestampMillis':
+                    return new avsc.TimestampMillis();
+                case 'AvroTimestampMicros':
+                    return new avsc.TimestampMicros();
+                case 'AvroLocalTimeMillis':
+                    return new avsc.LocalTimestampMillis();
+                case 'AvroLocalTimeMicros':
+                    return new avsc.LocalTimestampMicros();
+                case 'AvroUuid':
+                    return new avsc.Uuid();
+                default:
+                    throw new Error(`Type ${type.name} was referenced but not found. This should have been caught during parsing.`);
+            }
+        }
+
         return toRecordType(interfaceOrType, ast);
     }
-    
+
     const isLiteralType = (t: any & ts.Type): t is ts.Literal => {
         return !!t.kind;
     }
-    
+
     const typeName: string = isLiteralType(type) ? type.kind : type;
-    
+
     switch (typeName) {
         case "string":
             if (annotationsOnType.includes('uuid')) {
@@ -112,12 +143,12 @@ function resolveRootTypes(ast: ParsedAst): Set<string> {
 }
 
 function toRecordType(t: ts.InterfaceOrType, ast: ParsedAst): avsc.Schema {
-    return new avsc.Record(t.name, toFields(t.fields, ast), { doc: t.jsDoc });
+    return new avsc.Record(t.name, toFields(t.fields, ast), {doc: t.jsDoc});
 }
 
 export default function toAvroSchema(ast: ParsedAst): avsc.Schema[] {
     const rootTypes: Set<string> = resolveRootTypes(ast);
-    
+
     return ast.types
         .filter(t => rootTypes.has(t.name))
         .map(t => toRecordType(t, ast));

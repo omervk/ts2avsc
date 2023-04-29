@@ -1,0 +1,12 @@
+export type AvroInt = number;
+export type AvroFloat = number;
+export type AvroDouble = number;
+export type AvroLong = number;
+export type AvroDate = number;
+export type AvroTimeMillis = number;
+export type AvroTimeMicros = number;
+export type AvroTimestampMillis = number;
+export type AvroTimestampMicros = number;
+export type AvroLocalTimeMillis = number;
+export type AvroLocalTimeMicros = number;
+export type AvroUuid = string;
