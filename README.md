@@ -182,9 +182,10 @@ Don't... but if you have to:
 
 1. Clone the repository
 2. Make sure to use the Node version in the `.nvmrc` file (I recommend using `nvm install`).
-3. Run `npm run bootstrap`.
-4. Run `npm run test` to make sure it all worked.
-5. Turn back.
+3. Run `npm run bootstrap` to bootstrap the tests.
+4. Run `npm run build` to build the Typescript.
+5. Run `npm run test` to make sure it all worked.
+6. Turn back.
 
 ## Running the damned thing
 
