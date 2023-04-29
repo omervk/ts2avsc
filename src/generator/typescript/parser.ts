@@ -239,12 +239,6 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                 case ts.SyntaxKind.TypeAliasDeclaration:
                     addDeclaration(traverseDecl(child as ts.TypeAliasDeclaration), child);
                     break;
-                    
-                case ts.SyntaxKind.EndOfFileToken:
-                    break;
-
-                default:
-                    throw conversionError(child, `Unknown element type ${decodeSyntaxKind(child.kind)} in the context of a SourceFile.`);
             }
         });
     }
