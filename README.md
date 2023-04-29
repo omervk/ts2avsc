@@ -231,7 +231,7 @@ When you've come to regret your decision, you can get rid of the command line ut
 
 ### Design
 
-The design is compositional, which can be seen by reading `src/generator/typescript-to-avsc.ts`:
+The design is compositional, which can be seen by reading [src/generator/typescript-to-avsc.ts](./src/generator/typescript-to-avsc.ts):
 
 #### `typeScriptToAvroSchema`
 
@@ -257,9 +257,9 @@ graph LR;
 
 #### Composed Parts
 
-1. Files in `src/generator/typescript` are responsible for parsing the input to an intermediate model.
-2. Files in `src/generator/avsc` are responsible for converting the above model to a model of the Avro schemas and serializing each one.
-3. Files in `src/generator/avsc-lib` are responsible for using the above model of the Avro schema and creating a typed serializer for each supported library.
+1. Files in [src/generator/typescript](./src/generator/typescript) are responsible for parsing the input to an intermediate model.
+2. Files in [src/generator/avcs](./src/generator/avsc) are responsible for converting the above model to a model of the Avro schemas and serializing each one.
+3. Files in [src/generator/avsc-lib](./src/generator/avsc-lib) are responsible for using the above model of the Avro schema and creating a typed serializer for each supported library.
 
 ## // TODO:
 
