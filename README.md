@@ -9,6 +9,27 @@ In our case, developers building in TypeScript who want to produce Avro can defi
 and `interface`s.
 This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript file.
 
+<!-- TOC -->
+* [TypeScript to Avro Schema](#typescript-to-avro-schema)
+  * [WARNING: This is a WIP, ill-advised project. Use at your own peril.](#warning-this-is-a-wip-ill-advised-project-use-at-your-own-peril)
+  * [Operations](#operations)
+    * [1. Convert TypeScript interface or type to Avro Schema](#1-convert-typescript-interface-or-type-to-avro-schema)
+    * [2. Convert TypeScript type to serializer](#2-convert-typescript-type-to-serializer)
+  * [Features](#features)
+    * [Type Conversion](#type-conversion)
+      * [1. Annotations](#1-annotations)
+      * [2. Library Types (WIP)](#2-library-types-wip)
+  * [Usage](#usage)
+  * [Bootstrapping](#bootstrapping)
+  * [Running the damned thing](#running-the-damned-thing)
+  * [Contributing](#contributing)
+    * [Design](#design)
+      * [`typeScriptToAvroSchema`](#typescripttoavroschema)
+      * [`typeScriptToSerializerTypeScript`](#typescripttoserializertypescript)
+      * [Composed Parts](#composed-parts)
+  * [// TODO:](#-todo)
+<!-- TOC -->
+
 ## Operations
 
 ### 1. Convert TypeScript interface or type to Avro Schema
@@ -90,7 +111,7 @@ export default function serialize(value: MyInterface): Buffer {
 }
 ```
 
-### Why does the serializer manually convert `undefined`s to `null`s?
+**Why does the serializer manually convert `undefined`s to `null`s?**
 
 In TypeScript, the idiomatic way to denote optionality is using the `?` modifier.
 When an optional field is empty, it is 'set' to `undefined`.
