@@ -17,6 +17,7 @@ This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript fil
     * [2. Convert TypeScript type to serializer](#2-convert-typescript-type-to-serializer)
   * [Features](#features)
     * [Type Conversion](#type-conversion)
+    * [Type Narrowing](#type-narrowing)
       * [1. Annotations](#1-annotations)
       * [2. Library Types (WIP)](#2-library-types-wip)
   * [Usage](#usage)
@@ -134,7 +135,9 @@ Naturally supported types are:
 | `number`   | `double`  |
 | `null`     | `null`    |
 
-**Literal types** are also automatically translated to their respective Avro types. **Optional** fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`). **Arrays** are translated to Avro arrays, and their item types are converted recursively (also considering annotations and library types).
+**Literal types** are also automatically translated to their respective Avro types. **Optional** fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`). **Arrays** are translated to Avro arrays, and their item types are converted recursively (also considering [type narrowing](#type-narrowing), if it exists).
+
+### Type Narrowing
 
 If you're looking to further narrow the types you'll be producing, there are two ways to get there:
 
