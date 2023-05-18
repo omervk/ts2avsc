@@ -299,11 +299,12 @@ graph LR
    6. order (fields)
    7. enums
    8. maps
-   9. unions (ts -> avro)
-   10. fixed
-   11. type references outside the file's scope
-   12. not just the interface in the same file
-   13. run tests on the serializer/deserializer to make sure they do what they're supposed to
+   9. unions as fields (ts -> avro)
+   10. unions as the type itself
+   11. fixed
+   12. type references outside the file's scope
+   13. not just the interface in the same file
+   14. run tests on the serializer/deserializer to make sure they do what they're supposed to
 3. Document multiple root types (schema and serializer outputs)
 4. Split the command line tool from the types library
 5. Consider using actual newtypes for types library
