@@ -21,8 +21,8 @@ This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript fil
       * [1. Annotations](#1-annotations)
       * [2. Library Types (WIP)](#2-library-types-wip)
   * [Usage](#usage)
-  * [Bootstrapping](#bootstrapping)
-  * [Running the damned thing](#running-the-damned-thing)
+    * [Bootstrapping](#bootstrapping)
+    * [Running the damned thing](#running-the-damned-thing)
   * [Contributing](#contributing)
     * [Design](#design)
       * [`typeScriptToAvroSchema`](#typescripttoavroschema)
@@ -202,7 +202,7 @@ You can see an example of all these conversions from [TypeScript](./tests/cases/
 
 Don't... but if you have to:
 
-## Bootstrapping
+### Bootstrapping
 
 1. Clone the repository
 2. Make sure to use the Node version in the `.nvmrc` file (I recommend using `nvm install`).
@@ -211,7 +211,7 @@ Don't... but if you have to:
 5. Run `npm run test` to make sure it all worked.
 6. Turn back.
 
-## Running the damned thing
+### Running the damned thing
 
 First you'll need to install the command line utility: `npm install -g .`.
 
@@ -252,6 +252,8 @@ You can see the input and outputs for this call in [./tests/cases/007-two-base-t
 When you've come to regret your decision, you can get rid of the command line utility with `npm uninstall -g .`.
 
 ## Contributing
+
+Sure, I mean, you could, why not :)
 
 ### Design
 
