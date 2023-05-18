@@ -134,7 +134,7 @@ Naturally supported types are:
 | `number`   | `double`  |
 | `null`     | `null`    |
 
-Literal types are also automatically translated to their respective Avro types. Optional fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`).
+**Literal types** are also automatically translated to their respective Avro types. **Optional** fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`). **Arrays** are translated to Avro arrays, and their item types are converted recursively (also considering annotations and library types).
 
 If you're looking to further narrow the types you'll be producing, there are two ways to get there:
 
@@ -259,7 +259,7 @@ The design is compositional, which can be seen by reading [src/generator/typescr
 Translates an input TypeScript interface into an Avro schema
 
 ```mermaid
-graph LR;
+graph LR
     interface.ts-- toAst -->ParsedAst
     ParsedAst-- toAvroSchema -->Schemas
     Schemas-- writeAvsc -->schema.avsc
@@ -270,7 +270,7 @@ graph LR;
 Translates an input TypeScript interface into a typed Avro serializer
 
 ```mermaid
-graph LR;
+graph LR
     interface.ts-- toAst -->ParsedAst
     ParsedAst-- toAvroSchema -->Schemas
     Schemas-- toAvroSerializer -->serializer.ts
@@ -293,13 +293,12 @@ graph LR;
    5. default values
    6. order (fields)
    7. enums
-   8. arrays
-   9. maps
-   10. unions (ts -> avro)
-   11. fixed
-   12. type references outside the file's scope
-   13. not just the interface in the same file
-   14. run tests on the serializer/deserializer to make sure they do what they're supposed to
+   8. maps
+   9. unions (ts -> avro)
+   10. fixed
+   11. type references outside the file's scope
+   12. not just the interface in the same file
+   13. run tests on the serializer/deserializer to make sure they do what they're supposed to
 3. Document multiple root types (schema and serializer outputs)
 4. Split the command line tool from the types library
 5. Consider using actual newtypes for types library

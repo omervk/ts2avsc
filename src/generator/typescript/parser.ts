@@ -7,7 +7,8 @@ import {
     NullLiteral,
     NumberLiteral, ReferencedType,
     StringLiteral,
-    Type
+    Type,
+    ArrayType
 } from "./types";
 import {
     AvroDate,
@@ -217,6 +218,10 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
                 }
 
                 break;
+
+            case ts.SyntaxKind.ArrayType:
+                const arrayNode = type as ts.ArrayTypeNode;
+                return new ArrayType(toType(arrayNode.elementType, referencingType));
         }
 
         throw conversionError(type, `Unsupported type kind ${decodeSyntaxKind(type.kind)}`);

@@ -59,6 +59,10 @@ function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst):
         return toRecordType(interfaceOrType, ast);
     }
 
+    if (type instanceof ts.ArrayType) {
+        return new avsc.Array(toBaseType(type.itemType, annotationsOnType, ast));
+    }
+
     const isLiteralType = (t: any & ts.Type): t is ts.Literal => {
         return !!t.kind;
     }

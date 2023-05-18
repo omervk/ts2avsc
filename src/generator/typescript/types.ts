@@ -12,13 +12,13 @@ export type FieldDeclaration = {
     jsDoc?: string;
 }
 
-export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType;
+export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType | ArrayType;
 export type PrimitiveType = 'number' | 'string' | 'boolean'
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
 export type StandardType = 'Buffer'; // TODO: Find a better name
 
 export interface Literal {
-    readonly kind: string;   
+    readonly kind: string;
 }
 
 export class NullLiteral {
@@ -27,7 +27,7 @@ export class NullLiteral {
 
 export class BooleanLiteral {
     public readonly kind: string = 'boolean';
-    
+
     constructor(public readonly literal: boolean) {
     }
 }
@@ -48,5 +48,10 @@ export class NumberLiteral {
 
 export class ReferencedType {
     constructor(public readonly name: string) {
+    }
+}
+
+export class ArrayType {
+    constructor(public readonly itemType: Type) {
     }
 }

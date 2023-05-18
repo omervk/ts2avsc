@@ -1,22 +1,32 @@
 import * as avsc from "../avsc/types";
-import writeAvsc from "../avsc/writer";
 import {RecordField} from "../avsc/types";
+import writeAvsc from "../avsc/writer";
 
 function writeFieldInit(field: RecordField, sourceOfValue: string, indents: number): string | undefined {
-    function writeInit(type: avsc.Type): string {
+    function writeInit(type: avsc.Type, valueReference: string = `${sourceOfValue}.${field.name}`): string {
         if (type instanceof avsc.Union) {
             if (type.types[0] === 'null') {
-                return `${sourceOfValue}.${field.name} === undefined ? null : ${writeInit(type.types[1])}`;
+                return `${valueReference} === undefined ? null : ${writeInit(type.types[1])}`;
             }
         }
 
         if (type instanceof avsc.Record) {
-            return toMappedSerializer(type, indents + 1, `${sourceOfValue}.${field.name}`);
+            return toMappedSerializer(type, indents + 1, `${valueReference}`);
         }
 
-        return `${sourceOfValue}.${field.name}`;
+        if (type instanceof avsc.Array) {
+            const mapper = writeInit(type.items, 'value');
+
+            if (mapper === 'value') {
+                return valueReference;
+            }
+
+            return `${valueReference}.map(value => (${mapper}))`;
+        }
+
+        return `${valueReference}`;
     }
-    
+
     return `${field.name}: ${writeInit(field.type)}`;
 }
 
@@ -38,7 +48,7 @@ export default function toAvroSerializer(relativePathToTypeScript: string, schem
     if (!relativePathToTypeScript.startsWith('./') && !relativePathToTypeScript.startsWith('../')) {
         throw new Error("relativePathToTypeScript must be a relative path (starting with './' or '../')");
     }
-    
+
     return `import avro from 'avsc';
 import { ${schema.name} } from '${relativePathToTypeScript.replace(/\.ts$/i, '')}';
 

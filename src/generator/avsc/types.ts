@@ -1,6 +1,6 @@
 export type Schema = Record;
 
-export type Type = PrimitiveTypes | Union | LogicalTypes | Record; // | Enum | Array | Map | Fixed;
+export type Type = PrimitiveTypes | Union | LogicalTypes | Record | Array; // | Enum | Map | Fixed;
 export type PrimitiveTypes = 'null' | 'boolean' | 'int' | 'long' | 'float' | 'double' | 'bytes' | 'string';
 
 export type LogicalTypes =
@@ -24,7 +24,7 @@ export class Record {
                     doc: string,
                     aliases: string[],
                 }>) {
-        
+
         this.namespace = options?.namespace;
         this.doc = options?.doc;
         this.aliases = options?.aliases;
@@ -100,3 +100,8 @@ export class LocalTimestampMicros implements LogicalType {
     readonly type: string = 'long';
 }
 
+export class Array {
+    readonly type: string = 'array';
+
+    constructor(readonly items: Type) {}
+}
