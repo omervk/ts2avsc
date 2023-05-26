@@ -1,7 +1,7 @@
 import avro from 'avsc';
 import { Interface6 } from './input';
 
-const exactType = avro.Type.forSchema({"name":"Interface6","fields":[{"name":"optionalInterface","type":["null",{"name":"RefInterface6","fields":[{"name":"required","type":"boolean"}],"type":"record"}]},{"name":"requiredType","type":{"name":"RefType6","fields":[{"name":"optional","type":["null","boolean"]}],"type":"record"}}],"type":"record"});
+const exactType = avro.Type.forSchema({"fields":[{"name":"optionalInterface","type":["null",{"fields":[{"name":"required","type":"boolean"}],"name":"RefInterface6","type":"record"}]},{"name":"requiredType","type":{"fields":[{"name":"optional","type":["null","boolean"]}],"name":"RefType6","type":"record"}}],"name":"Interface6","type":"record"});
 
 export default function serialize(value: Interface6): Buffer {
     return exactType.toBuffer({

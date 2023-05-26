@@ -5,7 +5,7 @@ import * as fs from "fs";
 import {typeScriptToAvroSchema, typeScriptToSerializerTypeScript} from "./generator/typescript-to-avsc";
 import path from "path";
 const { version } = require('../package.json');
-import stringify from "fast-safe-stringify";
+import stringify from "safe-stable-stringify";
 
 const program = new Command();
 
@@ -41,7 +41,7 @@ try {
 if (options.schemas) {
     console.log('- Writing schemas...');
     typeScriptToAvroSchema(typeScriptContents).forEach((contents, schemaFileName) => {
-        const prettyContents = options.pretty ? stringify(JSON.parse(contents), undefined, 2) : contents;
+        const prettyContents = options.pretty ? stringify(JSON.parse(contents), undefined, 2)! : contents;
         console.log(`  + Writing ${schemaFileName}...`);
         fs.writeFileSync(path.join(targetDir, schemaFileName), prettyContents);
     });
