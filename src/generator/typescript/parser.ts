@@ -1,17 +1,3 @@
-import {
-  AvroDate,
-  AvroDouble,
-  AvroFloat,
-  AvroInt,
-  AvroLocalTimeMicros,
-  AvroLocalTimeMillis,
-  AvroLong,
-  AvroTimeMicros,
-  AvroTimeMillis,
-  AvroTimestampMicros,
-  AvroTimestampMillis,
-  AvroUuid,
-} from '../../types/index';
 import { decodeSyntaxKind } from './decodeSyntaxKind';
 import {
   ArrayType,
@@ -27,6 +13,7 @@ import {
 } from './types';
 import * as ts from 'typescript';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const findDirectedCycle = require('find-cycle/directed');
 
 export interface ParsedAst {
@@ -77,7 +64,6 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
   // Check that there are no cyclical references
   // TODO: Test this
   existingTypes.forEach(t => {
-    // @ts-ignore
     const cycle: string[] | undefined = findDirectedCycle(new Set([t]), (refType: string) => referenceMap.get(refType));
 
     if (cycle) {
@@ -198,7 +184,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
       case ts.SyntaxKind.NumberKeyword:
         return 'number';
 
-      case ts.SyntaxKind.TypeReference:
+      case ts.SyntaxKind.TypeReference: {
         const { typeName } = type as ts.TypeReferenceNode;
 
         if (typeName.kind === ts.SyntaxKind.Identifier) {
@@ -215,8 +201,9 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
         }
 
         throw conversionError(type, "We don't yet support QualifiedName as a TypeReference for a property.");
+      }
 
-      case ts.SyntaxKind.LiteralType:
+      case ts.SyntaxKind.LiteralType: {
         const { literal } = type as ts.LiteralTypeNode;
 
         if (literal.kind === ts.SyntaxKind.NullKeyword) {
@@ -241,12 +228,14 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
         }
 
         break;
+      }
 
-      case ts.SyntaxKind.ArrayType:
+      case ts.SyntaxKind.ArrayType: {
         const arrayNode = type as ts.ArrayTypeNode;
         return new ArrayType(toType(arrayNode.elementType, referencingType));
+      }
 
-      case ts.SyntaxKind.UnionType:
+      case ts.SyntaxKind.UnionType: {
         const unionNode = type as ts.UnionTypeNode;
         const types = unionNode.types
           .map(type => toType(type, referencingType))
@@ -257,6 +246,7 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
         }
 
         return new UnionType(types[0], types.slice(1));
+      }
     }
 
     throw conversionError(type, `Unsupported type kind ${decodeSyntaxKind(type.kind)}`);

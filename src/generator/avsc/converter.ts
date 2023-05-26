@@ -105,7 +105,8 @@ function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst):
     return new avsc.Enum(enumIdentifier, [enumIdentifier]);
   }
 
-  const isLiteralType = (t: any & ts.Type): t is ts.Literal => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const isLiteralType = (t: any & ts.Type): t is ts.LiteralType => {
     return !!t.kind;
   };
 
@@ -128,7 +129,7 @@ function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst):
     case 'null':
       return 'null';
 
-    case 'number':
+    case 'number': {
       const numberAnnotation = chooseNumberAnnotation(annotationsOnType);
       switch (numberAnnotation) {
         case 'float':
@@ -151,6 +152,7 @@ function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst):
         case 'local-timestamp-micros':
           return new avsc.LocalTimestampMicros();
       }
+    }
   }
 
   throw new Error(

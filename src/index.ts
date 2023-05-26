@@ -5,6 +5,8 @@ import path from 'path';
 
 import { typeScriptToAvroSchema, typeScriptToSerializerTypeScript } from './generator/typescript-to-avsc';
 import { Command } from 'commander';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version } = require('../package.json');
 import stringify from 'safe-stable-stringify';
 
@@ -34,14 +36,15 @@ let typeScriptContents: string;
 
 try {
   typeScriptContents = fs.readFileSync(sourceTs).toString();
-} catch (e: any) {
-  console.error(`Unable to read from file at ${sourceTs}: ${e.toString()}`);
+} catch (e: unknown) {
+  console.error(`Unable to read from file at ${sourceTs}: ${e instanceof Error ? e.toString() : e}`);
   process.exit(2);
 }
 
 if (options.schemas) {
   console.log('- Writing schemas...');
   typeScriptToAvroSchema(typeScriptContents).forEach((contents, schemaFileName) => {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const prettyContents = options.pretty ? stringify(JSON.parse(contents), undefined, 2)! : contents;
     console.log(`  + Writing ${schemaFileName}...`);
     fs.writeFileSync(path.join(targetDir, schemaFileName), prettyContents);

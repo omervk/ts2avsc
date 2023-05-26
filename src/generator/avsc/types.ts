@@ -31,7 +31,7 @@ export class Record {
     this.aliases = options?.aliases;
   }
 
-  public readonly type: 'record' = 'record';
+  public readonly type = 'record' as const;
   public readonly namespace?: string;
   public readonly doc?: string;
   public readonly aliases?: string[];
@@ -41,7 +41,7 @@ export type RecordField = {
   name: string;
   doc?: string;
   type: Type;
-  default?: any;
+  default?: unknown;
   order?: 'ascending' | 'descending' | 'ignore';
   aliases?: string[];
 };

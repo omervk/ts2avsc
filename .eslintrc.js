@@ -32,7 +32,7 @@ module.exports = {
     node: true,
     es6: true,
   },
-  "ignorePatterns": ["**/*.js"],
+  "ignorePatterns": ["**/*.js", "**/*.d.ts"],
   settings: {
     'import/resolver': 'typescript',
   },
