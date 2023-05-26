@@ -153,7 +153,13 @@
         {
             "name": "j",
             "type": {
-                "items": "string",
+                "items": {
+                    "name": "foo",
+                    "symbols": [
+                        "foo"
+                    ],
+                    "type": "enum"
+                },
                 "type": "array"
             }
         },

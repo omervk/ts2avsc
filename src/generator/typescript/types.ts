@@ -12,7 +12,7 @@ export type FieldDeclaration = {
     jsDoc?: string;
 }
 
-export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType | ArrayType;
+export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType | ArrayType | UnionType;
 export type PrimitiveType = 'number' | 'string' | 'boolean'
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
 export type StandardType = 'Buffer'; // TODO: Find a better name
@@ -53,5 +53,10 @@ export class ReferencedType {
 
 export class ArrayType {
     constructor(public readonly itemType: Type) {
+    }
+}
+
+export class UnionType {
+    constructor(public readonly head: Type, public readonly tail: Type[]) {
     }
 }

@@ -23,12 +23,24 @@
             "name": "optionalLitString",
             "type": [
                 "null",
-                "string"
+                {
+                    "name": "foo",
+                    "symbols": [
+                        "foo"
+                    ],
+                    "type": "enum"
+                }
             ]
         },
         {
             "name": "requiredLitString",
-            "type": "string"
+            "type": {
+                "name": "bar",
+                "symbols": [
+                    "bar"
+                ],
+                "type": "enum"
+            }
         },
         {
             "name": "optionalLitBoolean",

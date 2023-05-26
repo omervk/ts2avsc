@@ -1,6 +1,6 @@
 export type Schema = Record;
 
-export type Type = PrimitiveTypes | Union | LogicalTypes | Record | Array; // | Enum | Map | Fixed;
+export type Type = PrimitiveTypes | Union | LogicalTypes | Record | Array | Enum;// | Map | Fixed;
 export type PrimitiveTypes = 'null' | 'boolean' | 'int' | 'long' | 'float' | 'double' | 'bytes' | 'string';
 
 export type LogicalTypes =
@@ -104,4 +104,17 @@ export class Array {
     readonly type: string = 'array';
 
     constructor(readonly items: Type) {}
+}
+
+export class Enum {
+    readonly type: string = 'enum';
+
+    constructor(public readonly name: string,
+                public readonly symbols: string[]) {
+    }
+
+    public readonly namespace?: string;
+    public readonly doc?: string;
+    public readonly aliases?: string[];
+    public readonly default?: string;
 }

@@ -2,7 +2,7 @@ import * as avsc from "./types";
 import * as ts from "../typescript/types";
 import {ParsedAst} from "../typescript/parser";
 import {RecordField} from "./types";
-import {FieldDeclaration} from "../typescript/types";
+import {FieldDeclaration, StringLiteral} from "../typescript/types";
 
 function chooseNumberAnnotation(annotationsOnType: string[]): string {
     const numberAnnotations: string[] = [
@@ -16,6 +16,12 @@ function chooseNumberAnnotation(annotationsOnType: string[]): string {
     }
 
     return validAnnotations?.[0] || 'double';
+}
+
+function asValidEnumIdentifier(node: ts.Type): string | undefined {
+    if (node instanceof StringLiteral && !!node.literal.match(/^[A-Za-z_][A-Za-z0-9_]*$/)) {
+        return node.literal;
+    }
 }
 
 function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst): avsc.Type {
@@ -61,6 +67,29 @@ function toBaseType(type: ts.Type, annotationsOnType: string[], ast: ParsedAst):
 
     if (type instanceof ts.ArrayType) {
         return new avsc.Array(toBaseType(type.itemType, annotationsOnType, ast));
+    }
+
+    if (type instanceof ts.UnionType) {
+        // We support only native unions for now: All strings, unique, must match the regular expression
+        const enumValues = [type.head, ...type.tail]
+            .map(node => asValidEnumIdentifier(node));
+
+        if (enumValues.every(value => value !== undefined)) {
+            // We've asserted this "cast" in the condition above
+            const uniqueEnumValues = (enumValues as string[])
+                .filter((value, index) => enumValues.indexOf(value) === index);
+
+            return new avsc.Enum(uniqueEnumValues.join('_or_'), uniqueEnumValues);
+        }
+
+        throw new Error(`Unable to translate TypeScript unions that can not directly map to an Avro enum.`);
+    }
+
+    // Optimization: If we see a string literal that qualifies as an enum value, translate it to an enum.
+    const enumIdentifier = asValidEnumIdentifier(type);
+
+    if (enumIdentifier !== undefined) {
+        return new avsc.Enum(enumIdentifier, [enumIdentifier]);
     }
 
     const isLiteralType = (t: any & ts.Type): t is ts.Literal => {

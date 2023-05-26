@@ -17,6 +17,7 @@ This tool lets them generate an Avro Schema (`avsc`) out of their TypeScript fil
     * [2. Convert TypeScript type to serializer](#2-convert-typescript-type-to-serializer)
   * [Features](#features)
     * [Type Conversion](#type-conversion)
+    * [String Literals](#string-literals)
     * [Type Narrowing](#type-narrowing)
       * [1. Annotations](#1-annotations)
       * [2. Library Types (WIP)](#2-library-types-wip)
@@ -135,7 +136,42 @@ Naturally supported types are:
 | `number`   | `double`  |
 | `null`     | `null`    |
 
-**Literal types** are also automatically translated to their respective Avro types. **Optional** fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`). **Arrays** are translated to Avro arrays, and their item types are converted recursively (also considering [type narrowing](#type-narrowing), if it exists).
+* **Literal types** are also automatically translated to their respective Avro types except for strings, see [string literals](#string-literals).
+* **Optional** fields (e.g. `f?: number`) will produce nullable types (`["null", "number"]`).
+* **Arrays** are translated to Avro arrays, and their item types are converted recursively (also considering [type narrowing](#type-narrowing), if it exists).
+* **Unions** that qualify as Avro enums (string literals matching the regular expression `[A-Za-z_][A-Za-z0-9_]*`) will be translated into those enums.
+
+### String Literals
+
+In case a string literal is used in a TypeScript type, it will be converted to an Avro enum, increasing fidelity and reducing the size of the output Avro to 1. e.g.:
+
+```typescript
+export interface WithLit {
+    str: 'foo';
+}
+```
+
+Will result in the Avro schema:
+```avro schema
+{
+    "fields": [
+        {
+            "name": "str",
+            "type": {
+                "name": "foo",
+                "symbols": [
+                    "foo"
+                ],
+                "type": "enum"
+            }
+        }
+    ],
+    "name": "WithLit",
+    "type": "record"
+}
+```
+
+And when serialized will have an output of a single `0x00` byte.
 
 ### Type Narrowing
 
@@ -297,14 +333,13 @@ graph LR
    4. aliases
    5. default values
    6. order (fields)
-   7. enums
-   8. maps
-   9. unions as fields (ts -> avro)
-   10. unions as the type itself
-   11. fixed
-   12. type references outside the file's scope
-   13. not just the interface in the same file
-   14. run tests on the serializer/deserializer to make sure they do what they're supposed to
+   7. maps
+   8. unions as fields (ts -> avro)
+   9. unions as the type itself
+   10. fixed
+   11. type references outside the file's scope
+   12. not just the interface in the same file
+   13. run tests on the serializer/deserializer to make sure they do what they're supposed to
 3. Document multiple root types (schema and serializer outputs)
 4. Split the command line tool from the types library
 5. Consider using actual newtypes for types library

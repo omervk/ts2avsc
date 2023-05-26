@@ -8,7 +8,8 @@ import {
     NumberLiteral, ReferencedType,
     StringLiteral,
     Type,
-    ArrayType
+    ArrayType,
+    UnionType,
 } from "./types";
 import {
     AvroDate,
@@ -222,6 +223,18 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
             case ts.SyntaxKind.ArrayType:
                 const arrayNode = type as ts.ArrayTypeNode;
                 return new ArrayType(toType(arrayNode.elementType, referencingType));
+
+            case ts.SyntaxKind.UnionType:
+                const unionNode = type as ts.UnionTypeNode;
+                const types = unionNode.types
+                    .map(type => toType(type, referencingType))
+                    .flatMap(type => type instanceof UnionType ? [type.head, ...type.tail] : [type]);
+
+                if (types.length === 1) {
+                    return types[0];
+                }
+
+                return new UnionType(types[0], types.slice(1));
         }
 
         throw conversionError(type, `Unsupported type kind ${decodeSyntaxKind(type.kind)}`);
