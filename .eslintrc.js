@@ -28,19 +28,11 @@ module.exports = {
       },
     ],
   },
-  overrides: [
-    {
-      files: '*.js',
-      rules: {
-        '@typescript-eslint/no-var-requires': ['off'],
-      },
-    },
-  ],
   env: {
     node: true,
     es6: true,
-    jest: true,
   },
+  "ignorePatterns": ["**/*.js"],
   settings: {
     'import/resolver': 'typescript',
   },

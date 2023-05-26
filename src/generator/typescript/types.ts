@@ -1,62 +1,56 @@
 export type InterfaceOrType = {
-    name: string;
-    fields: FieldDeclaration[];
-    jsDoc?: string;
-}
+  name: string;
+  fields: FieldDeclaration[];
+  jsDoc?: string;
+};
 
 export type FieldDeclaration = {
-    name: string;
-    optional: boolean;
-    type: Type;
-    annotations: string[];
-    jsDoc?: string;
-}
+  name: string;
+  optional: boolean;
+  type: Type;
+  annotations: string[];
+  jsDoc?: string;
+};
 
 export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType | ArrayType | UnionType;
-export type PrimitiveType = 'number' | 'string' | 'boolean'
+export type PrimitiveType = 'number' | 'string' | 'boolean';
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
 export type StandardType = 'Buffer'; // TODO: Find a better name
 
 export interface Literal {
-    readonly kind: string;
+  readonly kind: string;
 }
 
 export class NullLiteral {
-    public readonly kind: string = 'null';
+  public readonly kind: string = 'null';
 }
 
 export class BooleanLiteral {
-    public readonly kind: string = 'boolean';
+  public readonly kind: string = 'boolean';
 
-    constructor(public readonly literal: boolean) {
-    }
+  constructor(public readonly literal: boolean) {}
 }
 
 export class StringLiteral {
-    public readonly kind: string = 'string';
+  public readonly kind: string = 'string';
 
-    constructor(public readonly literal: string) {
-    }
+  constructor(public readonly literal: string) {}
 }
 
 export class NumberLiteral {
-    public readonly kind: string = 'number';
+  public readonly kind: string = 'number';
 
-    constructor(public readonly literal: number) {
-    }
+  constructor(public readonly literal: number) {}
 }
 
 export class ReferencedType {
-    constructor(public readonly name: string) {
-    }
+  constructor(public readonly name: string) {}
 }
 
 export class ArrayType {
-    constructor(public readonly itemType: Type) {
-    }
+  constructor(public readonly itemType: Type) {}
 }
 
 export class UnionType {
-    constructor(public readonly head: Type, public readonly tail: Type[]) {
-    }
+  constructor(public readonly head: Type, public readonly tail: Type[]) {}
 }
