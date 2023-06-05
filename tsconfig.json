@@ -14,5 +14,6 @@
   "exclude": ["node_modules", "tests/cases"],
   "ts-node": {
     "require": ["tsconfig-paths/register"]
-  }
+  },
+  "reflection": true
 }

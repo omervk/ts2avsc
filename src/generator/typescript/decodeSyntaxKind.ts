@@ -4,7 +4,7 @@ export function decodeSyntaxKind(kind: ts.SyntaxKind): string {
   return decodedSyntaxKind[kind] || kind.toString();
 }
 
-const decodedSyntaxKind = {
+const decodedSyntaxKind: { [key: number]: string } = {
   0: 'Unknown',
   1: 'EndOfFileToken',
   2: 'SingleLineCommentTrivia',
