@@ -89,16 +89,41 @@ function toFieldType(type: ref.Type): [ts.Type, string[]] {
     case ref.ReflectionKind.number:
       // TODO: Work smarter with logical types that have a base type
       return ['number', getAnnotations(type as ref.TypeAnnotations)];
+
     case ref.ReflectionKind.boolean:
       return ['boolean', getAnnotations(type as ref.TypeAnnotations)];
+
     case ref.ReflectionKind.string:
       return ['string', getAnnotations(type as ref.TypeAnnotations)];
+
     case ref.ReflectionKind.class:
       if (type.classType === Uint8ArrayType.classType) {
         return ['Buffer', getAnnotations(type as ref.TypeAnnotations)];
       }
 
       break;
+
+    case ref.ReflectionKind.literal:
+      if (type.literal instanceof Symbol && type.literal.description !== undefined) {
+        return [new ts.StringLiteral(type.literal.description), []];
+      }
+
+      if (typeof type.literal === 'string') {
+        return [new ts.StringLiteral(type.literal), []];
+      }
+
+      if (typeof type.literal === 'number') {
+        return [new ts.NumberLiteral(type.literal), []];
+      }
+
+      if (typeof type.literal === 'boolean') {
+        return [new ts.BooleanLiteral(type.literal), []];
+      }
+
+      break;
+
+    case ref.ReflectionKind.null:
+      return [new ts.NullLiteral(), []];
   }
 
   throw new Error('Unsupported type'); // TODO: better errors

@@ -467,4 +467,105 @@ export default function serialize(value: Interface): Buffer {
       expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
     });
   });
+
+  describe('literal types', () => {
+    interface Interface {
+      optionalNull?: null;
+      requiredNull: null;
+
+      optionalLitNumber?: 12;
+      requiredLitNumber: 34;
+
+      optionalLitString?: 'foo';
+      requiredLitString: 'bar';
+
+      optionalLitBoolean?: false;
+      requiredLitBoolean: true;
+    }
+
+    it('avsc', () => {
+      const reflection = ReflectionClass.from<Interface>();
+      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
+      expect(actualSchemaMap.size).toStrictEqual(1);
+
+      const expectedAvroSchemaForEmptyInterface = {
+        fields: [
+          {
+            name: 'optionalNull',
+            type: 'null',
+          },
+          {
+            name: 'requiredNull',
+            type: 'null',
+          },
+          {
+            name: 'optionalLitNumber',
+            type: ['null', 'double'],
+          },
+          {
+            name: 'requiredLitNumber',
+            type: 'double',
+          },
+          {
+            name: 'optionalLitString',
+            type: [
+              'null',
+              {
+                name: 'foo',
+                symbols: ['foo'],
+                type: 'enum',
+              },
+            ],
+          },
+          {
+            name: 'requiredLitString',
+            type: {
+              name: 'bar',
+              symbols: ['bar'],
+              type: 'enum',
+            },
+          },
+          {
+            name: 'optionalLitBoolean',
+            type: ['null', 'boolean'],
+          },
+          {
+            name: 'requiredLitBoolean',
+            type: 'boolean',
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
+      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
+      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+    });
+
+    it('serializer', () => {
+      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      expect(actualSerializerMap.size).toStrictEqual(1);
+
+      const expectedSerializerForInterface = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"fields":[{"name":"optionalNull","type":"null"},{"name":"requiredNull","type":"null"},{"name":"optionalLitNumber","type":["null","double"]},{"name":"requiredLitNumber","type":"double"},{"name":"optionalLitString","type":["null",{"name":"foo","symbols":["foo"],"type":"enum"}]},{"name":"requiredLitString","type":{"name":"bar","symbols":["bar"],"type":"enum"}},{"name":"optionalLitBoolean","type":["null","boolean"]},{"name":"requiredLitBoolean","type":"boolean"}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        optionalNull: value.optionalNull === undefined ? null : value.optionalNull,
+        requiredNull: value.requiredNull,
+        optionalLitNumber: value.optionalLitNumber === undefined ? null : value.optionalLitNumber,
+        requiredLitNumber: value.requiredLitNumber,
+        optionalLitString: value.optionalLitString === undefined ? null : value.optionalLitString,
+        requiredLitString: value.requiredLitString,
+        optionalLitBoolean: value.optionalLitBoolean === undefined ? null : value.optionalLitBoolean,
+        requiredLitBoolean: value.requiredLitBoolean
+    });
+}`;
+      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
+      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
+      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+    });
+  });
 });
