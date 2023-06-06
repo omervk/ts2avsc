@@ -1,18 +1,25 @@
-export type InterfaceOrType = {
-  name: string;
-  fields: FieldDeclaration[];
-  jsDoc?: string;
-};
+export class InterfaceOrType {
+  constructor(readonly name: string, readonly fields: FieldDeclaration[], readonly jsDoc?: string) {}
+}
 
-export type FieldDeclaration = {
-  name: string;
-  optional: boolean;
-  type: Type;
-  annotations: string[];
-  jsDoc?: string;
-};
+export class FieldDeclaration {
+  constructor(
+    readonly name: string,
+    readonly optional: boolean,
+    readonly type: Type,
+    readonly annotations: string[],
+    readonly jsDoc?: string,
+  ) {}
+}
 
-export type Type = PrimitiveType | LiteralType | StandardType | ReferencedType | ArrayType | UnionType;
+export type Type =
+  | PrimitiveType
+  | LiteralType
+  | StandardType
+  | ReferencedType
+  | ArrayType
+  | UnionType
+  | InterfaceOrType;
 export type PrimitiveType = 'number' | 'string' | 'boolean';
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
 export type StandardType = 'Buffer'; // TODO: Find a better name

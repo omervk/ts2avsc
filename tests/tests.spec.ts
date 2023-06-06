@@ -568,4 +568,364 @@ export default function serialize(value: Interface): Buffer {
       expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
     });
   });
+
+  describe('arrays', () => {
+    type Referenced = {
+      z: string;
+    };
+
+    interface Interface {
+      a: boolean[];
+      a2?: boolean[];
+      b: Uint8Array[];
+      b2?: Uint8Array[];
+      c: string[];
+      c2?: string[];
+      d: number[];
+      d2?: number[];
+      e: number[][];
+      f: Referenced[];
+      f2?: Referenced[];
+
+      h: null[];
+      i: 34[];
+      j: 'foo'[];
+      k: true[];
+
+      l: AvroInt[];
+      m: AvroFloat[];
+      n: AvroDouble[];
+      o: AvroLong[];
+      p: AvroDate[];
+      q: AvroTimeMillis[];
+      r: AvroTimeMicros[];
+      s: AvroTimestampMillis[];
+      t: AvroTimestampMicros[];
+      u: AvroLocalTimeMillis[];
+      v: AvroLocalTimeMicros[];
+
+      // requiredDecimal: AvroDecimal;
+      // requiredDecimal2: AvroDecimal<7, 8>;
+
+      w: AvroUuid[];
+    }
+
+    it('avsc', () => {
+      const reflection = ReflectionClass.from<Interface>();
+      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
+      expect(actualSchemaMap.size).toStrictEqual(1);
+
+      const expectedAvroSchemaForEmptyInterface = {
+        fields: [
+          {
+            name: 'a',
+            type: {
+              items: 'boolean',
+              type: 'array',
+            },
+          },
+          {
+            name: 'a2',
+            type: [
+              'null',
+              {
+                items: 'boolean',
+                type: 'array',
+              },
+            ],
+          },
+          {
+            name: 'b',
+            type: {
+              items: 'bytes',
+              type: 'array',
+            },
+          },
+          {
+            name: 'b2',
+            type: [
+              'null',
+              {
+                items: 'bytes',
+                type: 'array',
+              },
+            ],
+          },
+          {
+            name: 'c',
+            type: {
+              items: 'string',
+              type: 'array',
+            },
+          },
+          {
+            name: 'c2',
+            type: [
+              'null',
+              {
+                items: 'string',
+                type: 'array',
+              },
+            ],
+          },
+          {
+            name: 'd',
+            type: {
+              items: 'double',
+              type: 'array',
+            },
+          },
+          {
+            name: 'd2',
+            type: [
+              'null',
+              {
+                items: 'double',
+                type: 'array',
+              },
+            ],
+          },
+          {
+            name: 'e',
+            type: {
+              items: {
+                items: 'double',
+                type: 'array',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'f',
+            type: {
+              items: {
+                fields: [
+                  {
+                    name: 'z',
+                    type: 'string',
+                  },
+                ],
+                name: 'Referenced',
+                type: 'record',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'f2',
+            type: [
+              'null',
+              {
+                items: {
+                  fields: [
+                    {
+                      name: 'z',
+                      type: 'string',
+                    },
+                  ],
+                  name: 'Referenced',
+                  type: 'record',
+                },
+                type: 'array',
+              },
+            ],
+          },
+          {
+            name: 'h',
+            type: {
+              items: 'null',
+              type: 'array',
+            },
+          },
+          {
+            name: 'i',
+            type: {
+              items: 'double',
+              type: 'array',
+            },
+          },
+          {
+            name: 'j',
+            type: {
+              items: {
+                name: 'foo',
+                symbols: ['foo'],
+                type: 'enum',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'k',
+            type: {
+              items: 'boolean',
+              type: 'array',
+            },
+          },
+          {
+            name: 'l',
+            type: {
+              items: 'int',
+              type: 'array',
+            },
+          },
+          {
+            name: 'm',
+            type: {
+              items: 'float',
+              type: 'array',
+            },
+          },
+          {
+            name: 'n',
+            type: {
+              items: 'double',
+              type: 'array',
+            },
+          },
+          {
+            name: 'o',
+            type: {
+              items: 'long',
+              type: 'array',
+            },
+          },
+          {
+            name: 'p',
+            type: {
+              items: {
+                logicalType: 'date',
+                type: 'int',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'q',
+            type: {
+              items: {
+                logicalType: 'time-millis',
+                type: 'int',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'r',
+            type: {
+              items: {
+                logicalType: 'time-micros',
+                type: 'long',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 's',
+            type: {
+              items: {
+                logicalType: 'timestamp-millis',
+                type: 'long',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 't',
+            type: {
+              items: {
+                logicalType: 'timestamp-micros',
+                type: 'long',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'u',
+            type: {
+              items: {
+                logicalType: 'local-timestamp-millis',
+                type: 'long',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'v',
+            type: {
+              items: {
+                logicalType: 'local-timestamp-micros',
+                type: 'long',
+              },
+              type: 'array',
+            },
+          },
+          {
+            name: 'w',
+            type: {
+              items: {
+                logicalType: 'uuid',
+                type: 'string',
+              },
+              type: 'array',
+            },
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
+      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
+      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+    });
+
+    it('serializer', () => {
+      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      expect(actualSerializerMap.size).toStrictEqual(1);
+
+      const expectedSerializerForInterface = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":{"items":"boolean","type":"array"}},{"name":"a2","type":["null",{"items":"boolean","type":"array"}]},{"name":"b","type":{"items":"bytes","type":"array"}},{"name":"b2","type":["null",{"items":"bytes","type":"array"}]},{"name":"c","type":{"items":"string","type":"array"}},{"name":"c2","type":["null",{"items":"string","type":"array"}]},{"name":"d","type":{"items":"double","type":"array"}},{"name":"d2","type":["null",{"items":"double","type":"array"}]},{"name":"e","type":{"items":{"items":"double","type":"array"},"type":"array"}},{"name":"f","type":{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}},{"name":"f2","type":["null",{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}]},{"name":"h","type":{"items":"null","type":"array"}},{"name":"i","type":{"items":"double","type":"array"}},{"name":"j","type":{"items":{"name":"foo","symbols":["foo"],"type":"enum"},"type":"array"}},{"name":"k","type":{"items":"boolean","type":"array"}},{"name":"l","type":{"items":"int","type":"array"}},{"name":"m","type":{"items":"float","type":"array"}},{"name":"n","type":{"items":"double","type":"array"}},{"name":"o","type":{"items":"long","type":"array"}},{"name":"p","type":{"items":{"logicalType":"date","type":"int"},"type":"array"}},{"name":"q","type":{"items":{"logicalType":"time-millis","type":"int"},"type":"array"}},{"name":"r","type":{"items":{"logicalType":"time-micros","type":"long"},"type":"array"}},{"name":"s","type":{"items":{"logicalType":"timestamp-millis","type":"long"},"type":"array"}},{"name":"t","type":{"items":{"logicalType":"timestamp-micros","type":"long"},"type":"array"}},{"name":"u","type":{"items":{"logicalType":"local-timestamp-millis","type":"long"},"type":"array"}},{"name":"v","type":{"items":{"logicalType":"local-timestamp-micros","type":"long"},"type":"array"}},{"name":"w","type":{"items":{"logicalType":"uuid","type":"string"},"type":"array"}}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        a: value.a,
+        a2: value.a2 === undefined ? null : value.a2,
+        b: value.b,
+        b2: value.b2 === undefined ? null : value.b2,
+        c: value.c,
+        c2: value.c2 === undefined ? null : value.c2,
+        d: value.d,
+        d2: value.d2 === undefined ? null : value.d2,
+        e: value.e,
+        f: value.f.map(value => ({
+            z: value.z
+        })),
+        f2: value.f2 === undefined ? null : value.f2.map(value => ({
+            z: value.z
+        })),
+        h: value.h,
+        i: value.i,
+        j: value.j,
+        k: value.k,
+        l: value.l,
+        m: value.m,
+        n: value.n,
+        o: value.o,
+        p: value.p,
+        q: value.q,
+        r: value.r,
+        s: value.s,
+        t: value.t,
+        u: value.u,
+        v: value.v,
+        w: value.w
+    });
+}`;
+      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
+      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
+      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+    });
+  });
 });

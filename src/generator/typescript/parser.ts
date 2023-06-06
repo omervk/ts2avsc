@@ -267,13 +267,13 @@ export function parseAst(sourceFile: ts.SourceFile): ParsedAst {
       throw conversionError(prop, 'Property has no type?');
     }
 
-    return {
-      name: prop.name.text,
-      type: toType(prop.type, containerTypeName),
-      optional: !!prop.questionToken,
-      annotations: getAvroAnnotationsBefore(prop),
-      jsDoc: getJsDoc(prop),
-    };
+    return new FieldDeclaration(
+      prop.name.text,
+      !!prop.questionToken,
+      toType(prop.type, containerTypeName),
+      getAvroAnnotationsBefore(prop),
+      getJsDoc(prop),
+    );
   }
 
   function traverseSourceFile(node: ts.SourceFile): void {

@@ -84,7 +84,7 @@ function getAnnotations(hasAnnotations: TypeAnnotations): string[] {
   return [];
 }
 
-function toFieldType(type: ref.Type): [ts.Type, string[]] {
+function toType(type: ref.Type): [ts.Type, string[]] {
   switch (type.kind) {
     case ref.ReflectionKind.number:
       // TODO: Work smarter with logical types that have a base type
@@ -101,7 +101,10 @@ function toFieldType(type: ref.Type): [ts.Type, string[]] {
         return ['Buffer', getAnnotations(type as ref.TypeAnnotations)];
       }
 
-      break;
+      return [toRecordType(ref.resolveClassType(type)), []];
+
+    case ref.ReflectionKind.objectLiteral:
+      return [toRecordType(ref.resolveClassType(type)), []];
 
     case ref.ReflectionKind.literal:
       if (type.literal instanceof Symbol && type.literal.description !== undefined) {
@@ -124,36 +127,34 @@ function toFieldType(type: ref.Type): [ts.Type, string[]] {
 
     case ref.ReflectionKind.null:
       return [new ts.NullLiteral(), []];
+
+    case ref.ReflectionKind.array: {
+      const [itemType, annotations] = toType(type.type);
+      return [new ts.ArrayType(itemType), annotations];
+    }
   }
 
-  throw new Error('Unsupported type'); // TODO: better errors
+  throw new Error(`Unsupported type ${type.kind}`); // TODO: better errors
 }
 
 function toField(property: ref.ReflectionProperty): ts.FieldDeclaration {
-  let type: ts.Type;
-  let annotations: string[] = [];
+  const [type, annotations]: [ts.Type, string[]] = toType(property.getType());
 
-  try {
-    [type, annotations] = toFieldType(property.getType());
-  } catch {
-    type = toRecordType(property.getResolvedReflectionClass());
-  }
-
-  return {
-    name: property.getNameAsString(),
-    optional: property.isActualOptional(),
+  return new ts.FieldDeclaration(
+    property.getNameAsString(),
+    property.isActualOptional(),
     type,
     annotations,
-    jsDoc: getDocs(property.getType()),
-  };
+    getDocs(property.getType()),
+  );
 }
 
 function toRecordType<T>(reflection: ref.ReflectionClass<T>): ts.InterfaceOrType {
-  return {
-    name: reflection.getName(),
-    fields: reflection.getProperties().map(property => toField(property)),
-    jsDoc: getDocs(reflection.type),
-  };
+  return new ts.InterfaceOrType(
+    reflection.getName(),
+    reflection.getProperties().map(property => toField(property)),
+    getDocs(reflection.type),
+  );
 }
 
 export function toAst<T>(reflection: ref.ReflectionClass<T>): ParsedAst {
