@@ -4,6 +4,7 @@ import toAvroSerializer from '../src/generator/avsc-lib/serializer';
 import { toAst } from '../src/generator/typescript/reflector';
 import {
   AvroDate,
+  AvroDoc,
   AvroDouble,
   AvroFloat,
   AvroInt,
@@ -412,6 +413,53 @@ export default function serialize(value: Interface): Buffer {
         requiredLocalTimestampMicros: value.requiredLocalTimestampMicros,
         optionalUuid: value.optionalUuid === undefined ? null : value.optionalUuid,
         requiredUuid: value.requiredUuid
+    });
+}`;
+      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
+      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
+      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+    });
+  });
+
+  describe('documentation', () => {
+    interface Interface extends AvroDoc<'Information about the interface'> {
+      someField: string & AvroDoc<'Information about the field'>;
+    }
+
+    it('avsc', () => {
+      const reflection = ReflectionClass.from<Interface>();
+      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
+      expect(actualSchemaMap.size).toStrictEqual(1);
+
+      const expectedAvroSchemaForEmptyInterface = {
+        doc: 'Information about the interface',
+        fields: [
+          {
+            doc: 'Information about the field',
+            name: 'someField',
+            type: 'string',
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
+      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
+      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+    });
+
+    it('serializer', () => {
+      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      expect(actualSerializerMap.size).toStrictEqual(1);
+
+      const expectedSerializerForInterface = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"doc":"Information about the interface","fields":[{"doc":"Information about the field","name":"someField","type":"string"}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        someField: value.someField
     });
 }`;
       expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);

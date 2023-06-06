@@ -29,3 +29,7 @@ export type AvroLocalTimeMicros = number & LogicalType<'local-timestamp-micros',
 export type AvroUuid = string & LogicalType<'uuid', AvroString>;
 
 // TODO: Decimals
+
+export type AvroDoc<DocString extends string> = {
+  __meta?: ['avroDoc', never & DocString];
+};

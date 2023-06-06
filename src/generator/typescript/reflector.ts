@@ -44,6 +44,19 @@ import { TypeAnnotations } from '@deepkit/type/src/reflection/type';
  */
 const Uint8ArrayType = ref.typeOf<Uint8Array>() as ref.TypeClass;
 
+function getDocs(hasAnnotations: TypeAnnotations): string | undefined {
+  const decorators = hasAnnotations.decorators || [];
+  const typeAnnotation: ref.Type | undefined = decorators.filter(value => value.typeName === 'AvroDoc')?.[0];
+
+  if (typeAnnotation) {
+    const typeArgument = typeAnnotation.typeArguments?.[0];
+
+    if (typeArgument && typeArgument.kind === ref.ReflectionKind.literal && typeof typeArgument.literal === 'string') {
+      return typeArgument.literal;
+    }
+  }
+}
+
 function getAnnotations(hasAnnotations: TypeAnnotations): string[] {
   const decorators = hasAnnotations.decorators || [];
   const typeAnnotation: ref.Type | undefined = decorators.filter(value => value.typeName === 'Type')?.[0];
@@ -106,6 +119,7 @@ function toField(property: ref.ReflectionProperty): ts.FieldDeclaration {
     optional: property.isActualOptional(),
     type,
     annotations,
+    jsDoc: getDocs(property.getType()),
   };
 }
 
@@ -113,6 +127,7 @@ function toRecordType<T>(reflection: ref.ReflectionClass<T>): ts.InterfaceOrType
   return {
     name: reflection.getName(),
     fields: reflection.getProperties().map(property => toField(property)),
+    jsDoc: getDocs(reflection.type),
   };
 }
 
