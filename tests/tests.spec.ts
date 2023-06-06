@@ -987,4 +987,75 @@ export default function serialize(value: Interface): Buffer {
       expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
+
+  describe('pick, omit and friends', () => {
+    interface ToPick {
+      a: string;
+      b: boolean;
+    }
+
+    interface ToOmit {
+      c: number;
+      d: Uint8Array;
+    }
+
+    interface ToRequire {
+      e?: 'test';
+    }
+
+    interface ToPartial {
+      f: 123;
+    }
+
+    interface Interface extends Pick<ToPick, 'a'>, Omit<ToOmit, 'd'>, Required<ToRequire>, Partial<ToPartial> {}
+
+    it('avsc', () => {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
+        fields: [
+          {
+            name: 'a',
+            type: 'string',
+          },
+          {
+            name: 'c',
+            type: 'double',
+          },
+          {
+            name: 'e',
+            type: {
+              name: 'test',
+              symbols: ['test'],
+              type: 'enum',
+            },
+          },
+          {
+            name: 'f',
+            type: ['null', 'double'],
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+      expect(actualSchema).toStrictEqual(expectedSchema);
+    });
+
+    it('serializer', () => {
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":"string"},{"name":"c","type":"double"},{"name":"e","type":{"name":"test","symbols":["test"],"type":"enum"}},{"name":"f","type":["null","double"]}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        a: value.a,
+        c: value.c,
+        e: value.e,
+        f: value.f === undefined ? null : value.f
+    });
+}`;
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
+    });
+  });
 });
