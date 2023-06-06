@@ -1,22 +1,15 @@
-import toAvroSchema from './avsc/converter';
-import { Schema } from './avsc/types';
+import { toRecordType } from './avsc/converter';
 import writeAvsc from './avsc/writer';
 import toAvroSerializer from './avsc-lib/serializer';
-import { ParsedAst, toAst } from './typescript/parser';
+import { ReflectionClass } from '@deepkit/type';
 
-export function typeScriptToAvroSchema(typeScriptContents: string): Map<string, string> {
-  const ast: ParsedAst = toAst(typeScriptContents);
-  const schemas: Schema[] = toAvroSchema(ast);
-  return new Map(schemas.map(schema => [`${schema.name}.avsc`, writeAvsc(schema)]));
+export function typeScriptToAvroSchema<T>(reflection: ReflectionClass<T>): string {
+  return writeAvsc(toRecordType<T>(reflection));
 }
 
-export function typeScriptToSerializerTypeScript(
-  typeScriptContents: string,
+export function typeScriptToSerializerTypeScript<T>(
+  reflection: ReflectionClass<T>,
   relativePathToTypeScript: string,
-): Map<string, string> {
-  const ast: ParsedAst = toAst(typeScriptContents);
-  const schemas: Schema[] = toAvroSchema(ast);
-  return new Map(
-    schemas.map(schema => [`${schema.name}.serializer.ts`, toAvroSerializer(relativePathToTypeScript, schema)]),
-  );
+): string {
+  return toAvroSerializer(relativePathToTypeScript, toRecordType<T>(reflection));
 }

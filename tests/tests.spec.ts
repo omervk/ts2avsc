@@ -2,7 +2,6 @@ import { toRecordType } from '../src/generator/avsc/converter';
 import * as avro from '../src/generator/avsc/types';
 import writeAvsc from '../src/generator/avsc/writer';
 import toAvroSerializer from '../src/generator/avsc-lib/serializer';
-import { toInterfaceOrType } from '../src/generator/typescript/reflector';
 import {
   AvroDate,
   AvroDoc,
@@ -21,11 +20,11 @@ import {
 import { ReflectionClass } from '@deepkit/type';
 
 export function typeScriptToAvroSchema<T>(reflection: ReflectionClass<T>): string {
-  return writeAvsc(toRecordType(toInterfaceOrType<T>(reflection)));
+  return writeAvsc(toRecordType<T>(reflection));
 }
 
 function typeScriptToSerializerTypeScript<T>(reflection: ReflectionClass<T>, relativePathToTypeScript: string): string {
-  return toAvroSerializer(relativePathToTypeScript, toRecordType(toInterfaceOrType<T>(reflection)));
+  return toAvroSerializer(relativePathToTypeScript, toRecordType<T>(reflection));
 }
 
 describe('tests', () => {
@@ -431,7 +430,7 @@ export default function serialize(value: Interface): Buffer {
       requiredNull: null;
 
       optionalLitNumber?: 12;
-      requiredLitNumber: 34;
+      requiredLitNumber: 34.5;
 
       optionalLitString?: 'foo';
       requiredLitString: 'bar';
@@ -454,7 +453,7 @@ export default function serialize(value: Interface): Buffer {
           },
           {
             name: 'optionalLitNumber',
-            type: ['null', 'double'],
+            type: ['null', 'int'],
           },
           {
             name: 'requiredLitNumber',
@@ -499,7 +498,7 @@ export default function serialize(value: Interface): Buffer {
       const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
-const exactType = avro.Type.forSchema({"fields":[{"name":"optionalNull","type":"null"},{"name":"requiredNull","type":"null"},{"name":"optionalLitNumber","type":["null","double"]},{"name":"requiredLitNumber","type":"double"},{"name":"optionalLitString","type":["null",{"name":"foo","symbols":["foo"],"type":"enum"}]},{"name":"requiredLitString","type":{"name":"bar","symbols":["bar"],"type":"enum"}},{"name":"optionalLitBoolean","type":["null","boolean"]},{"name":"requiredLitBoolean","type":"boolean"}],"name":"Interface","type":"record"});
+const exactType = avro.Type.forSchema({"fields":[{"name":"optionalNull","type":"null"},{"name":"requiredNull","type":"null"},{"name":"optionalLitNumber","type":["null","int"]},{"name":"requiredLitNumber","type":"double"},{"name":"optionalLitString","type":["null",{"name":"foo","symbols":["foo"],"type":"enum"}]},{"name":"requiredLitString","type":{"name":"bar","symbols":["bar"],"type":"enum"}},{"name":"optionalLitBoolean","type":["null","boolean"]},{"name":"requiredLitBoolean","type":"boolean"}],"name":"Interface","type":"record"});
 
 export default function serialize(value: Interface): Buffer {
     return exactType.toBuffer({
@@ -537,6 +536,7 @@ export default function serialize(value: Interface): Buffer {
 
       h: null[];
       i: 34[];
+      i2: 34.5[];
       j: 'foo'[];
       k: true[];
 
@@ -685,6 +685,13 @@ export default function serialize(value: Interface): Buffer {
           {
             name: 'i',
             type: {
+              items: 'int',
+              type: 'array',
+            },
+          },
+          {
+            name: 'i2',
+            type: {
               items: 'double',
               type: 'array',
             },
@@ -827,7 +834,7 @@ export default function serialize(value: Interface): Buffer {
       const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
-const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":{"items":"boolean","type":"array"}},{"name":"a2","type":["null",{"items":"boolean","type":"array"}]},{"name":"b","type":{"items":"bytes","type":"array"}},{"name":"b2","type":["null",{"items":"bytes","type":"array"}]},{"name":"c","type":{"items":"string","type":"array"}},{"name":"c2","type":["null",{"items":"string","type":"array"}]},{"name":"d","type":{"items":"double","type":"array"}},{"name":"d2","type":["null",{"items":"double","type":"array"}]},{"name":"e","type":{"items":{"items":"double","type":"array"},"type":"array"}},{"name":"f","type":{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}},{"name":"f2","type":["null",{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}]},{"name":"h","type":{"items":"null","type":"array"}},{"name":"i","type":{"items":"double","type":"array"}},{"name":"j","type":{"items":{"name":"foo","symbols":["foo"],"type":"enum"},"type":"array"}},{"name":"k","type":{"items":"boolean","type":"array"}},{"name":"l","type":{"items":"int","type":"array"}},{"name":"m","type":{"items":"float","type":"array"}},{"name":"n","type":{"items":"double","type":"array"}},{"name":"o","type":{"items":"long","type":"array"}},{"name":"p","type":{"items":{"logicalType":"date","type":"int"},"type":"array"}},{"name":"q","type":{"items":{"logicalType":"time-millis","type":"int"},"type":"array"}},{"name":"r","type":{"items":{"logicalType":"time-micros","type":"long"},"type":"array"}},{"name":"s","type":{"items":{"logicalType":"timestamp-millis","type":"long"},"type":"array"}},{"name":"t","type":{"items":{"logicalType":"timestamp-micros","type":"long"},"type":"array"}},{"name":"u","type":{"items":{"logicalType":"local-timestamp-millis","type":"long"},"type":"array"}},{"name":"v","type":{"items":{"logicalType":"local-timestamp-micros","type":"long"},"type":"array"}},{"name":"w","type":{"items":{"logicalType":"uuid","type":"string"},"type":"array"}}],"name":"Interface","type":"record"});
+const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":{"items":"boolean","type":"array"}},{"name":"a2","type":["null",{"items":"boolean","type":"array"}]},{"name":"b","type":{"items":"bytes","type":"array"}},{"name":"b2","type":["null",{"items":"bytes","type":"array"}]},{"name":"c","type":{"items":"string","type":"array"}},{"name":"c2","type":["null",{"items":"string","type":"array"}]},{"name":"d","type":{"items":"double","type":"array"}},{"name":"d2","type":["null",{"items":"double","type":"array"}]},{"name":"e","type":{"items":{"items":"double","type":"array"},"type":"array"}},{"name":"f","type":{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}},{"name":"f2","type":["null",{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}]},{"name":"h","type":{"items":"null","type":"array"}},{"name":"i","type":{"items":"int","type":"array"}},{"name":"i2","type":{"items":"double","type":"array"}},{"name":"j","type":{"items":{"name":"foo","symbols":["foo"],"type":"enum"},"type":"array"}},{"name":"k","type":{"items":"boolean","type":"array"}},{"name":"l","type":{"items":"int","type":"array"}},{"name":"m","type":{"items":"float","type":"array"}},{"name":"n","type":{"items":"double","type":"array"}},{"name":"o","type":{"items":"long","type":"array"}},{"name":"p","type":{"items":{"logicalType":"date","type":"int"},"type":"array"}},{"name":"q","type":{"items":{"logicalType":"time-millis","type":"int"},"type":"array"}},{"name":"r","type":{"items":{"logicalType":"time-micros","type":"long"},"type":"array"}},{"name":"s","type":{"items":{"logicalType":"timestamp-millis","type":"long"},"type":"array"}},{"name":"t","type":{"items":{"logicalType":"timestamp-micros","type":"long"},"type":"array"}},{"name":"u","type":{"items":{"logicalType":"local-timestamp-millis","type":"long"},"type":"array"}},{"name":"v","type":{"items":{"logicalType":"local-timestamp-micros","type":"long"},"type":"array"}},{"name":"w","type":{"items":{"logicalType":"uuid","type":"string"},"type":"array"}}],"name":"Interface","type":"record"});
 
 export default function serialize(value: Interface): Buffer {
     return exactType.toBuffer({
@@ -848,6 +855,7 @@ export default function serialize(value: Interface): Buffer {
         })),
         h: value.h,
         i: value.i,
+        i2: value.i2,
         j: value.j,
         k: value.k,
         l: value.l,
@@ -1031,7 +1039,7 @@ export default function serialize(value: Interface): Buffer {
           },
           {
             name: 'f',
-            type: ['null', 'double'],
+            type: ['null', 'int'],
           },
         ],
         name: 'Interface',
@@ -1045,7 +1053,7 @@ export default function serialize(value: Interface): Buffer {
       const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
-const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":"string"},{"name":"c","type":"double"},{"name":"e","type":{"name":"test","symbols":["test"],"type":"enum"}},{"name":"f","type":["null","double"]}],"name":"Interface","type":"record"});
+const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":"string"},{"name":"c","type":"double"},{"name":"e","type":{"name":"test","symbols":["test"],"type":"enum"}},{"name":"f","type":["null","int"]}],"name":"Interface","type":"record"});
 
 export default function serialize(value: Interface): Buffer {
     return exactType.toBuffer({
