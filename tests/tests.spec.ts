@@ -1010,4 +1010,61 @@ export default function serialize(value: Interface): Buffer {
       expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
     });
   });
+
+  describe('extends and intersections', () => {
+    interface Parent1 {
+      left: string;
+    }
+
+    interface Parent2 {
+      right?: boolean;
+    }
+
+    interface Interface extends Parent1, Parent2 {}
+
+    it('avsc', () => {
+      const reflection = ReflectionClass.from<Interface>();
+      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
+      expect(actualSchemaMap.size).toStrictEqual(1);
+
+      const expectedAvroSchemaForEmptyInterface = {
+        fields: [
+          {
+            name: 'left',
+            type: 'string',
+          },
+          {
+            name: 'right',
+            type: ['null', 'boolean'],
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+
+      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
+      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
+      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+    });
+
+    it('serializer', () => {
+      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      expect(actualSerializerMap.size).toStrictEqual(1);
+
+      const expectedSerializerForInterface = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"fields":[{"name":"left","type":"string"},{"name":"right","type":["null","boolean"]}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        left: value.left,
+        right: value.right === undefined ? null : value.right
+    });
+}`;
+      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
+      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
+      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+    });
+  });
 });
