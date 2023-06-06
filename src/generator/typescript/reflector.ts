@@ -3,45 +3,6 @@ import * as ts from './types';
 import * as ref from '@deepkit/type';
 import { TypeAnnotations } from '@deepkit/type/src/reflection/type';
 
-/*
-    TypeNever
-    | TypeAny
-    | TypeUnknown
-    | TypeVoid
-    | TypeObject
-    | TypeString
-    | TypeNumber
-    | TypeBoolean
-    | TypeBigInt
-    | TypeSymbol
-    | TypeNull
-    | TypeUndefined
-    | TypeLiteral
-    | TypeTemplateLiteral
-    | TypeParameter
-    | TypeFunction
-    | TypeMethod
-    | TypeProperty
-    | TypePromise
-    | TypeClass
-    | TypeEnum
-    | TypeEnumMember
-    | TypeUnion
-    | TypeIntersection
-    | TypeArray
-    | TypeObjectLiteral
-    | TypeIndexSignature
-    | TypePropertySignature
-    | TypeMethodSignature
-    | TypeTypeParameter
-    | TypeInfer
-    | TypeTuple
-    | TypeTupleMember
-    | TypeRest
-    | TypeRegexp
-    | TypeCallSignature
-
- */
 const Uint8ArrayType = ref.typeOf<Uint8Array>() as ref.TypeClass;
 
 function getDocs(hasAnnotations: TypeAnnotations): string | undefined {
@@ -131,6 +92,12 @@ function toType(type: ref.Type): [ts.Type, string[]] {
     case ref.ReflectionKind.array: {
       const [itemType, annotations] = toType(type.type);
       return [new ts.ArrayType(itemType), annotations];
+    }
+
+    case ref.ReflectionKind.union: {
+      // TODO: Unignore annotations
+      const types = type.types.map(t => toType(t)).map(([t, a]) => t);
+      return [new ts.UnionType(types[0], types.slice(1)), []];
     }
   }
 

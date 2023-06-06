@@ -928,4 +928,86 @@ export default function serialize(value: Interface): Buffer {
       expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
     });
   });
+
+  describe('native avro enums', () => {
+    interface Interface {
+      enum: 'a' | 'b' | 'c';
+      optionalEnum?: 'a' | 'b' | 'c';
+      repeatingOptions: 'a' | 'a' | 'b';
+      singleOptionRepeating: 'a' | 'a' | 'a';
+    }
+
+    it('avsc', () => {
+      const reflection = ReflectionClass.from<Interface>();
+      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
+      expect(actualSchemaMap.size).toStrictEqual(1);
+
+      const expectedAvroSchemaForEmptyInterface = {
+        fields: [
+          {
+            name: 'enum',
+            type: {
+              name: 'a_or_b_or_c',
+              symbols: ['a', 'b', 'c'],
+              type: 'enum',
+            },
+          },
+          {
+            name: 'optionalEnum',
+            type: [
+              'null',
+              {
+                name: 'a_or_b_or_c',
+                symbols: ['a', 'b', 'c'],
+                type: 'enum',
+              },
+            ],
+          },
+          {
+            name: 'repeatingOptions',
+            type: {
+              name: 'a_or_b',
+              symbols: ['a', 'b'],
+              type: 'enum',
+            },
+          },
+          {
+            name: 'singleOptionRepeating',
+            type: {
+              name: 'a',
+              symbols: ['a'],
+              type: 'enum',
+            },
+          },
+        ],
+        name: 'Interface',
+        type: 'record',
+      };
+      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
+      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
+      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+    });
+
+    it('serializer', () => {
+      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      expect(actualSerializerMap.size).toStrictEqual(1);
+
+      const expectedSerializerForInterface = `import avro from 'avsc';
+import { Interface } from './input';
+
+const exactType = avro.Type.forSchema({"fields":[{"name":"enum","type":{"name":"a_or_b_or_c","symbols":["a","b","c"],"type":"enum"}},{"name":"optionalEnum","type":["null",{"name":"a_or_b_or_c","symbols":["a","b","c"],"type":"enum"}]},{"name":"repeatingOptions","type":{"name":"a_or_b","symbols":["a","b"],"type":"enum"}},{"name":"singleOptionRepeating","type":{"name":"a","symbols":["a"],"type":"enum"}}],"name":"Interface","type":"record"});
+
+export default function serialize(value: Interface): Buffer {
+    return exactType.toBuffer({
+        enum: value.enum,
+        optionalEnum: value.optionalEnum === undefined ? null : value.optionalEnum,
+        repeatingOptions: value.repeatingOptions,
+        singleOptionRepeating: value.singleOptionRepeating
+    });
+}`;
+      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
+      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
+      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+    });
+  });
 });
