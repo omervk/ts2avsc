@@ -1,7 +1,7 @@
 import { ParsedAst } from './parser';
 import * as ts from './types';
 import * as ref from '@deepkit/type';
-import { typeOf } from '@deepkit/type';
+import { TypeAnnotations } from '@deepkit/type/src/reflection/type';
 
 /*
     TypeNever
@@ -42,19 +42,47 @@ import { typeOf } from '@deepkit/type';
     | TypeCallSignature
 
  */
-const Uint8ArrayType = typeOf<Uint8Array>() as ref.TypeClass;
+const Uint8ArrayType = ref.typeOf<Uint8Array>() as ref.TypeClass;
 
-function toFieldType(type: ref.Type): ts.Type {
+function getAnnotations(hasAnnotations: TypeAnnotations): string[] {
+  const decorators = hasAnnotations.decorators || [];
+  const typeAnnotation: ref.Type | undefined = decorators.filter(value => value.typeName === 'Type')?.[0];
+
+  if (typeAnnotation) {
+    const typeArgument = typeAnnotation.typeArguments?.[0];
+
+    if (typeArgument && typeArgument.kind === ref.ReflectionKind.literal && typeof typeArgument.literal === 'string') {
+      const annotation = typeArgument.literal;
+      return [annotation];
+    }
+  }
+
+  const logicalTypeAnnotation: ref.Type | undefined = decorators.filter(value => value.typeName === 'LogicalType')?.[0];
+
+  if (logicalTypeAnnotation) {
+    const typeArgument = logicalTypeAnnotation.typeArguments?.[0];
+
+    if (typeArgument && typeArgument.kind === ref.ReflectionKind.literal && typeof typeArgument.literal === 'string') {
+      const annotation = typeArgument.literal;
+      return [annotation];
+    }
+  }
+
+  return [];
+}
+
+function toFieldType(type: ref.Type): [ts.Type, string[]] {
   switch (type.kind) {
     case ref.ReflectionKind.number:
-      return 'number';
+      // TODO: Work smarter with logical types that have a base type
+      return ['number', getAnnotations(type as ref.TypeAnnotations)];
     case ref.ReflectionKind.boolean:
-      return 'boolean';
+      return ['boolean', getAnnotations(type as ref.TypeAnnotations)];
     case ref.ReflectionKind.string:
-      return 'string';
+      return ['string', getAnnotations(type as ref.TypeAnnotations)];
     case ref.ReflectionKind.class:
       if (type.classType === Uint8ArrayType.classType) {
-        return 'Buffer';
+        return ['Buffer', getAnnotations(type as ref.TypeAnnotations)];
       }
 
       break;
@@ -65,9 +93,10 @@ function toFieldType(type: ref.Type): ts.Type {
 
 function toField(property: ref.ReflectionProperty): ts.FieldDeclaration {
   let type: ts.Type;
+  let annotations: string[] = [];
 
   try {
-    type = toFieldType(property.getType());
+    [type, annotations] = toFieldType(property.getType());
   } catch {
     type = toRecordType(property.getResolvedReflectionClass());
   }
@@ -76,7 +105,7 @@ function toField(property: ref.ReflectionProperty): ts.FieldDeclaration {
     name: property.getNameAsString(),
     optional: property.isActualOptional(),
     type,
-    annotations: [], // TODO:
+    annotations,
   };
 }
 

@@ -4,7 +4,7 @@
     "scripts": {
         "bootstrap": "node ./tests/generate-tests.js",
         "test": "jest",
-        "build": "npx tsc",
+        "build": "tsc",
         "lint-fix": "eslint --fix src/"
     },
     "bin": {
