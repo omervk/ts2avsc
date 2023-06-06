@@ -12,14 +12,7 @@ export class FieldDeclaration {
   ) {}
 }
 
-export type Type =
-  | PrimitiveType
-  | LiteralType
-  | StandardType
-  | ReferencedType
-  | ArrayType
-  | UnionType
-  | InterfaceOrType;
+export type Type = PrimitiveType | LiteralType | StandardType | ArrayType | UnionType | InterfaceOrType;
 export type PrimitiveType = 'number' | 'string' | 'boolean';
 export type LiteralType = NullLiteral | BooleanLiteral | StringLiteral | NumberLiteral;
 export type StandardType = 'Buffer'; // TODO: Find a better name
@@ -50,10 +43,6 @@ export class NumberLiteral implements Literal<number> {
   public readonly kind: string = 'number';
 
   constructor(public readonly literal: number) {}
-}
-
-export class ReferencedType {
-  constructor(public readonly name: string) {}
 }
 
 export class ArrayType {

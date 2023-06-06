@@ -1,4 +1,3 @@
-import { ParsedAst } from './parser';
 import * as ts from './types';
 import * as ref from '@deepkit/type';
 import { TypeAnnotations } from '@deepkit/type/src/reflection/type';
@@ -62,10 +61,10 @@ function toType(type: ref.Type): [ts.Type, string[]] {
         return ['Buffer', getAnnotations(type as ref.TypeAnnotations)];
       }
 
-      return [toRecordType(ref.resolveClassType(type)), []];
+      return [toInterfaceOrType(ref.resolveClassType(type)), []];
 
     case ref.ReflectionKind.objectLiteral:
-      return [toRecordType(ref.resolveClassType(type)), []];
+      return [toInterfaceOrType(ref.resolveClassType(type)), []];
 
     case ref.ReflectionKind.literal:
       if (type.literal instanceof Symbol && type.literal.description !== undefined) {
@@ -116,17 +115,10 @@ function toField(property: ref.ReflectionProperty): ts.FieldDeclaration {
   );
 }
 
-function toRecordType<T>(reflection: ref.ReflectionClass<T>): ts.InterfaceOrType {
+export function toInterfaceOrType<T>(reflection: ref.ReflectionClass<T>): ts.InterfaceOrType {
   return new ts.InterfaceOrType(
     reflection.getName(),
     reflection.getProperties().map(property => toField(property)),
     getDocs(reflection.type),
   );
-}
-
-export function toAst<T>(reflection: ref.ReflectionClass<T>): ParsedAst {
-  return {
-    types: [toRecordType<T>(reflection)],
-    referenceMap: new Map(),
-  };
 }

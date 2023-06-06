@@ -1,7 +1,8 @@
-import toAvroSchema from '../src/generator/avsc/converter';
+import { toRecordType } from '../src/generator/avsc/converter';
+import * as avro from '../src/generator/avsc/types';
 import writeAvsc from '../src/generator/avsc/writer';
 import toAvroSerializer from '../src/generator/avsc-lib/serializer';
-import { toAst } from '../src/generator/typescript/reflector';
+import { toInterfaceOrType } from '../src/generator/typescript/reflector';
 import {
   AvroDate,
   AvroDoc,
@@ -19,60 +20,42 @@ import {
 } from '../src/types/decorators'; // TODO: Document never using the 'import * as x' style
 import { ReflectionClass } from '@deepkit/type';
 
-export function typeScriptToAvroSchema<T>(reflection: ReflectionClass<T>): Map<string, string> {
-  const ast = toAst<T>(reflection);
-  const schemas = toAvroSchema(ast);
-  return new Map(schemas.map(schema => [`${schema.name}.avsc`, writeAvsc(schema)]));
+export function typeScriptToAvroSchema<T>(reflection: ReflectionClass<T>): string {
+  return writeAvsc(toRecordType(toInterfaceOrType<T>(reflection)));
 }
 
-function typeScriptToSerializerTypeScript<T>(reflection: ReflectionClass<T>, relativePathToTypeScript: string) {
-  const ast = toAst<T>(reflection);
-  const schemas = toAvroSchema(ast);
-  return new Map(
-    schemas.map(schema => [`${schema.name}.serializer.ts`, toAvroSerializer(relativePathToTypeScript, schema)]),
-  );
+function typeScriptToSerializerTypeScript<T>(reflection: ReflectionClass<T>, relativePathToTypeScript: string): string {
+  return toAvroSerializer(relativePathToTypeScript, toRecordType(toInterfaceOrType<T>(reflection)));
 }
 
 describe('tests', () => {
   describe('empty', () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
-    interface EmptyInterface {}
+    interface Interface {}
 
     it('avsc', () => {
-      const actualSchemaMap = typeScriptToAvroSchema<EmptyInterface>(ReflectionClass.from<EmptyInterface>());
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
-        name: 'EmptyInterface',
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
+        name: 'Interface',
         fields: [],
         type: 'record',
       };
-      expect(actualSchemaMap.has('EmptyInterface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('EmptyInterface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(
-        ReflectionClass.from<EmptyInterface>(),
-        './input.ts',
-      );
-      expect(actualSerializerMap.size).toStrictEqual(1);
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
+import { Interface } from './input';
 
-      // Source: tests/cases/000-empty-interface/serializer.ts
-      const expectedSerializerForEmptyInterface = `import avro from 'avsc';
-import { EmptyInterface } from './input';
+const exactType = avro.Type.forSchema({"fields":[],"name":"Interface","type":"record"});
 
-const exactType = avro.Type.forSchema({"fields":[],"name":"EmptyInterface","type":"record"});
-
-export default function serialize(value: EmptyInterface): Buffer {
+export default function serialize(value: Interface): Buffer {
     return exactType.toBuffer({
 
     });
 }`;
-      expect(actualSerializerMap.has('EmptyInterface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('EmptyInterface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForEmptyInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -93,10 +76,8 @@ export default function serialize(value: EmptyInterface): Buffer {
     }
 
     it('avsc', () => {
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>());
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         name: 'Interface',
         fields: [
           {
@@ -134,16 +115,12 @@ export default function serialize(value: EmptyInterface): Buffer {
         ],
         type: 'record',
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"requiredBool","type":"boolean"},{"name":"optionalBool","type":["null","boolean"]},{"name":"requiredBytes","type":"bytes"},{"name":"optionalBytes","type":["null","bytes"]},{"name":"requiredString","type":"string"},{"name":"optionalString","type":["null","string"]},{"name":"optionalDouble","type":["null","double"]},{"name":"requiredDouble","type":"double"}],"name":"Interface","type":"record"});
@@ -160,9 +137,7 @@ export default function serialize(value: Interface): Buffer {
         requiredDouble: value.requiredDouble
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -195,11 +170,8 @@ export default function serialize(value: Interface): Buffer {
     }
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         name: 'Interface',
         type: 'record',
         fields: [
@@ -373,16 +345,12 @@ export default function serialize(value: Interface): Buffer {
           },
         ],
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"optionalInt","type":["null","int"]},{"name":"requiredInt","type":"int"},{"name":"optionalFloat","type":["null","float"]},{"name":"requiredFloat","type":"float"},{"name":"optionalDouble","type":["null","double"]},{"name":"requiredDouble","type":"double"},{"name":"optionalLong","type":["null","long"]},{"name":"requiredLong","type":"long"},{"name":"optionalDate","type":["null",{"logicalType":"date","type":"int"}]},{"name":"requiredDate","type":{"logicalType":"date","type":"int"}},{"name":"optionalTimeMs","type":["null",{"logicalType":"time-millis","type":"int"}]},{"name":"requiredTimeMs","type":{"logicalType":"time-millis","type":"int"}},{"name":"optionalTimeMicros","type":["null",{"logicalType":"time-micros","type":"long"}]},{"name":"requiredTimeMicros","type":{"logicalType":"time-micros","type":"long"}},{"name":"optionalTimestampMs","type":["null",{"logicalType":"timestamp-millis","type":"long"}]},{"name":"requiredTimestampMs","type":{"logicalType":"timestamp-millis","type":"long"}},{"name":"optionalTimestampMicros","type":["null",{"logicalType":"timestamp-micros","type":"long"}]},{"name":"requiredTimestampMicros","type":{"logicalType":"timestamp-micros","type":"long"}},{"name":"optionalLocalTimestampMs","type":["null",{"logicalType":"local-timestamp-millis","type":"long"}]},{"name":"requiredLocalTimestampMs","type":{"logicalType":"local-timestamp-millis","type":"long"}},{"name":"optionalLocalTimestampMicros","type":["null",{"logicalType":"local-timestamp-micros","type":"long"}]},{"name":"requiredLocalTimestampMicros","type":{"logicalType":"local-timestamp-micros","type":"long"}},{"name":"optionalUuid","type":["null",{"logicalType":"uuid","type":"string"}]},{"name":"requiredUuid","type":{"logicalType":"uuid","type":"string"}}],"name":"Interface","type":"record"});
@@ -415,9 +383,7 @@ export default function serialize(value: Interface): Buffer {
         requiredUuid: value.requiredUuid
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -427,11 +393,8 @@ export default function serialize(value: Interface): Buffer {
     }
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         doc: 'Information about the interface',
         fields: [
           {
@@ -443,16 +406,12 @@ export default function serialize(value: Interface): Buffer {
         name: 'Interface',
         type: 'record',
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"doc":"Information about the interface","fields":[{"doc":"Information about the field","name":"someField","type":"string"}],"name":"Interface","type":"record"});
@@ -462,9 +421,7 @@ export default function serialize(value: Interface): Buffer {
         someField: value.someField
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -484,11 +441,8 @@ export default function serialize(value: Interface): Buffer {
     }
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         fields: [
           {
             name: 'optionalNull',
@@ -537,16 +491,12 @@ export default function serialize(value: Interface): Buffer {
         name: 'Interface',
         type: 'record',
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"optionalNull","type":"null"},{"name":"requiredNull","type":"null"},{"name":"optionalLitNumber","type":["null","double"]},{"name":"requiredLitNumber","type":"double"},{"name":"optionalLitString","type":["null",{"name":"foo","symbols":["foo"],"type":"enum"}]},{"name":"requiredLitString","type":{"name":"bar","symbols":["bar"],"type":"enum"}},{"name":"optionalLitBoolean","type":["null","boolean"]},{"name":"requiredLitBoolean","type":"boolean"}],"name":"Interface","type":"record"});
@@ -563,9 +513,7 @@ export default function serialize(value: Interface): Buffer {
         requiredLitBoolean: value.requiredLitBoolean
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -611,11 +559,8 @@ export default function serialize(value: Interface): Buffer {
     }
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         fields: [
           {
             name: 'a',
@@ -874,16 +819,12 @@ export default function serialize(value: Interface): Buffer {
         name: 'Interface',
         type: 'record',
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"a","type":{"items":"boolean","type":"array"}},{"name":"a2","type":["null",{"items":"boolean","type":"array"}]},{"name":"b","type":{"items":"bytes","type":"array"}},{"name":"b2","type":["null",{"items":"bytes","type":"array"}]},{"name":"c","type":{"items":"string","type":"array"}},{"name":"c2","type":["null",{"items":"string","type":"array"}]},{"name":"d","type":{"items":"double","type":"array"}},{"name":"d2","type":["null",{"items":"double","type":"array"}]},{"name":"e","type":{"items":{"items":"double","type":"array"},"type":"array"}},{"name":"f","type":{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}},{"name":"f2","type":["null",{"items":{"fields":[{"name":"z","type":"string"}],"name":"Referenced","type":"record"},"type":"array"}]},{"name":"h","type":{"items":"null","type":"array"}},{"name":"i","type":{"items":"double","type":"array"}},{"name":"j","type":{"items":{"name":"foo","symbols":["foo"],"type":"enum"},"type":"array"}},{"name":"k","type":{"items":"boolean","type":"array"}},{"name":"l","type":{"items":"int","type":"array"}},{"name":"m","type":{"items":"float","type":"array"}},{"name":"n","type":{"items":"double","type":"array"}},{"name":"o","type":{"items":"long","type":"array"}},{"name":"p","type":{"items":{"logicalType":"date","type":"int"},"type":"array"}},{"name":"q","type":{"items":{"logicalType":"time-millis","type":"int"},"type":"array"}},{"name":"r","type":{"items":{"logicalType":"time-micros","type":"long"},"type":"array"}},{"name":"s","type":{"items":{"logicalType":"timestamp-millis","type":"long"},"type":"array"}},{"name":"t","type":{"items":{"logicalType":"timestamp-micros","type":"long"},"type":"array"}},{"name":"u","type":{"items":{"logicalType":"local-timestamp-millis","type":"long"},"type":"array"}},{"name":"v","type":{"items":{"logicalType":"local-timestamp-micros","type":"long"},"type":"array"}},{"name":"w","type":{"items":{"logicalType":"uuid","type":"string"},"type":"array"}}],"name":"Interface","type":"record"});
@@ -923,9 +864,7 @@ export default function serialize(value: Interface): Buffer {
         w: value.w
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -938,11 +877,8 @@ export default function serialize(value: Interface): Buffer {
     }
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         fields: [
           {
             name: 'enum',
@@ -983,16 +919,12 @@ export default function serialize(value: Interface): Buffer {
         name: 'Interface',
         type: 'record',
       };
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"enum","type":{"name":"a_or_b_or_c","symbols":["a","b","c"],"type":"enum"}},{"name":"optionalEnum","type":["null",{"name":"a_or_b_or_c","symbols":["a","b","c"],"type":"enum"}]},{"name":"repeatingOptions","type":{"name":"a_or_b","symbols":["a","b"],"type":"enum"}},{"name":"singleOptionRepeating","type":{"name":"a","symbols":["a"],"type":"enum"}}],"name":"Interface","type":"record"});
@@ -1005,9 +937,7 @@ export default function serialize(value: Interface): Buffer {
         singleOptionRepeating: value.singleOptionRepeating
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 
@@ -1023,11 +953,8 @@ export default function serialize(value: Interface): Buffer {
     interface Interface extends Parent1, Parent2 {}
 
     it('avsc', () => {
-      const reflection = ReflectionClass.from<Interface>();
-      const actualSchemaMap = typeScriptToAvroSchema<Interface>(reflection);
-      expect(actualSchemaMap.size).toStrictEqual(1);
-
-      const expectedAvroSchemaForEmptyInterface = {
+      const actualSchema = JSON.parse(typeScriptToAvroSchema<Interface>(ReflectionClass.from<Interface>()));
+      const expectedSchema = {
         fields: [
           {
             name: 'left',
@@ -1041,17 +968,12 @@ export default function serialize(value: Interface): Buffer {
         name: 'Interface',
         type: 'record',
       };
-
-      expect(actualSchemaMap.has('Interface.avsc')).toStrictEqual(true);
-      const actualAvroSchemaForEmptyInterface = JSON.parse(actualSchemaMap.get('Interface.avsc')!);
-      expect(actualAvroSchemaForEmptyInterface).toStrictEqual(expectedAvroSchemaForEmptyInterface);
+      expect(actualSchema).toStrictEqual(expectedSchema);
     });
 
     it('serializer', () => {
-      const actualSerializerMap = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
-      expect(actualSerializerMap.size).toStrictEqual(1);
-
-      const expectedSerializerForInterface = `import avro from 'avsc';
+      const actualSerializer = typeScriptToSerializerTypeScript(ReflectionClass.from<Interface>(), './input.ts');
+      const expectedSerializer = `import avro from 'avsc';
 import { Interface } from './input';
 
 const exactType = avro.Type.forSchema({"fields":[{"name":"left","type":"string"},{"name":"right","type":["null","boolean"]}],"name":"Interface","type":"record"});
@@ -1062,9 +984,7 @@ export default function serialize(value: Interface): Buffer {
         right: value.right === undefined ? null : value.right
     });
 }`;
-      expect(actualSerializerMap.has('Interface.serializer.ts')).toStrictEqual(true);
-      const actualSerializerForEmptyInterface = actualSerializerMap.get('Interface.serializer.ts')!;
-      expect(actualSerializerForEmptyInterface.trim()).toStrictEqual(expectedSerializerForInterface.trim());
+      expect(actualSerializer.trim()).toStrictEqual(expectedSerializer.trim());
     });
   });
 });

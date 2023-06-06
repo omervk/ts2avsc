@@ -20,5 +20,4 @@ module.exports = {
         : []),
   ],
   reporters: ['default'],
-  setupFiles: ['./tests/generate-tests.js'],
 };
